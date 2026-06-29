@@ -1,0 +1,477 @@
+{% extends "base.html" %}
+
+{% block title %}Text - TextResearchText{% endblock %}
+
+{% block content %}
+<div x-data="preferencesPage()" x-init="init()" class="space-y-6 memory-shell">
+    <section class="hero-band">
+        <div class="page-header">
+            <div>
+                <div class="page-kicker">Text</div>
+                <h1 class="page-title">Text</h1>
+                <p class="page-subtitle">TextResearchText, ReviewTextManualText, TextResearchText. </p>
+            </div>
+            <div class="toolbar">
+                <button @click="learnFromInteractions()"
+                    :disabled="learning"
+                    class="btn-secondary disabled:opacity-50">
+                    <span x-show="!learning">Text</span>
+                    <span x-show="learning" class="flex items-center">
+                        <svg class="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Text...
+                    </span>
+                </button>
+                <button @click="showAddModal = true" class="btn-primary">ManualText</button>
+            </div>
+        </div>
+    </section>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 memory-grid">
+        <div class="metric-card memory-summary-card">
+            <div class="metric-label">Text</div>
+            <div class="metric-value numeric" x-text="preferences.length"></div>
+            <div class="metric-note">Text. </div>
+        </div>
+        <div class="metric-card memory-summary-card">
+            <div class="metric-label">Text</div>
+            <div class="metric-value numeric" x-text="preferences.filter(pref => pref.active).length"></div>
+            <div class="metric-note">CurrentTextResearchText. </div>
+        </div>
+        <div class="metric-card memory-summary-card">
+            <div class="metric-label">Text</div>
+            <div class="metric-value numeric" x-text="interactions.length"></div>
+            <div class="metric-note">Text. </div>
+        </div>
+    </div>
+
+    <section class="section-card">
+        <div class="section-header">
+            <div>
+                <h2 class="section-title">Text</h2>
+                <p class="section-description">TextDecisionText, TextAutoText. </p>
+            </div>
+            <button @click="editingSummary = !editingSummary" class="btn-ghost text-blue-600">
+                <span x-text="editingSummary ? 'CancelText' : 'Text'"></span>
+            </button>
+        </div>
+        <div class="section-body">
+            <div x-show="!editingSummary" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="surface-panel memory-summary-card">
+                    <div class="metric-label">DecisionText</div>
+                    <p class="mt-3 text-sm leading-6 text-slate-800" x-text="summary.decision_style || 'TextSettings'"></p>
+                </div>
+                <div class="surface-panel memory-summary-card">
+                    <div class="metric-label">RiskText</div>
+                    <p class="mt-3 text-sm leading-6 text-slate-800" x-text="summary.risk_tolerance || 'TextSettings'"></p>
+                </div>
+                <div class="surface-panel memory-summary-card">
+                    <div class="metric-label">ResearchText</div>
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        <template x-for="(focus, i) in summary.research_focus || []" :key="i">
+                            <span class="tag-pill-accent" x-text="focus"></span>
+                        </template>
+                        <span x-show="!summary.research_focus || summary.research_focus.length === 0" class="text-sm text-slate-400">TextSettings</span>
+                    </div>
+                </div>
+                <div class="surface-panel memory-summary-card">
+                    <div class="metric-label">Text</div>
+                    <div class="mt-3 flex flex-wrap gap-2">
+                        <template x-for="(pattern, i) in summary.disliked_patterns || []" :key="i">
+                            <span class="tag-pill-negative" x-text="pattern"></span>
+                        </template>
+                        <span x-show="!summary.disliked_patterns || summary.disliked_patterns.length === 0" class="text-sm text-slate-400">TextSettings</span>
+                    </div>
+                </div>
+                <div class="surface-panel md:col-span-2 memory-summary-card">
+                    <div class="metric-label">Text</div>
+                    <div class="mt-3 space-y-2">
+                        <template x-for="(rule, i) in summary.custom_rules || []" :key="i">
+                            <p class="text-sm leading-6 text-slate-700" x-text="rule"></p>
+                        </template>
+                        <span x-show="!summary.custom_rules || summary.custom_rules.length === 0" class="text-sm text-slate-400">TextSettings</span>
+                    </div>
+                </div>
+            </div>
+
+            <div x-show="editingSummary" class="form-grid">
+                <div>
+                    <label class="field-label">DecisionText</label>
+                    <input type="text" x-model="summary.decision_style"
+                        class="control-input"
+                        placeholder="Text: Text, Text">
+                </div>
+                <div>
+                    <label class="field-label">RiskText</label>
+                    <input type="text" x-model="summary.risk_tolerance"
+                        class="control-input"
+                        placeholder="Text: Text, Text">
+                </div>
+                <div>
+                    <label class="field-label">ResearchText(Text)</label>
+                    <input type="text" x-model="summaryEditResearchFocus"
+                        class="control-input"
+                        placeholder="Text: Text, Text, Text">
+                </div>
+                <div>
+                    <label class="field-label">Text(Text)</label>
+                    <input type="text" x-model="summaryEditDislikedPatterns"
+                        class="control-input"
+                        placeholder="Text: TextAnalysis, Text">
+                </div>
+                <div>
+                    <label class="field-label">Text(Text)</label>
+                    <textarea x-model="summaryEditCustomRules"
+                        class="control-textarea"
+                        rows="4"
+                        placeholder="Text: &#10;Text&#10;TextBuyText"></textarea>
+                </div>
+                <div class="toolbar justify-end">
+                    <button @click="editingSummary = false" class="btn-secondary">Cancel</button>
+                    <button @click="saveSummary()" class="btn-primary">Save</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-card">
+        <div class="section-header">
+            <div>
+                <h2 class="section-title">Text</h2>
+                <p class="section-description">TextText X Text, Text YText, TextResearchTextReviewText. </p>
+            </div>
+        </div>
+        <div class="section-body">
+            <div x-show="preferences.length === 0" class="empty-state section-card-muted">
+                <div class="empty-icon mono">PF</div>
+                <p class="text-sm">No dataText, TextResearchTextAutoText. </p>
+            </div>
+
+            <div class="list-stack memory-stream" x-show="preferences.length > 0">
+                <template x-for="pref in preferences" :key="pref.id">
+                    <div class="list-row memory-rule-card" :class="pref.active ? '' : 'opacity-60'">
+                        <div class="flex-1 min-w-0">
+                            <div class="flex flex-wrap items-center gap-2 mb-2">
+                                <span class="tag-pill"
+                                      :class="{
+                                          'tag-pill-accent': pref.category === 'decision_style',
+                                          'tag-pill-positive': pref.category === 'research_focus',
+                                          'tag-pill-negative': pref.category === 'risk_tolerance'
+                                      }"
+                                      x-text="getCategoryLabel(pref.category)"></span>
+                                <span class="text-xs text-slate-400" x-text="pref.source === 'manual' ? 'ManualText' : 'AutoText'"></span>
+                                <span class="text-xs text-slate-400" x-text="formatDate(pref.created_at)"></span>
+                            </div>
+                            <p class="text-sm leading-6 text-slate-800">
+                                <span class="font-semibold text-blue-600">Text</span>
+                                <span x-text="pref.trigger"></span>
+                                <span class="font-semibold text-blue-600">Text</span>, 
+                                <span class="font-semibold text-green-600">Text</span>
+                                <span x-text="pref.my_response"></span>. 
+                            </p>
+                            <p x-show="pref.reasoning" class="mt-2 text-sm text-slate-500">
+                                Text: <span x-text="pref.reasoning"></span>
+                            </p>
+                        </div>
+                        <div class="toolbar shrink-0">
+                            <button @click="togglePreference(pref.id)"
+                                class="btn-ghost"
+                                :title="pref.active ? 'Text' : 'Text'">
+                                <span x-text="pref.active ? 'Text' : 'Text'" :class="pref.active ? 'text-green-600' : 'text-slate-400'"></span>
+                            </button>
+                            <button @click="editPreference(pref)" class="btn-secondary">Text</button>
+                            <button @click="deletePreference(pref.id)" class="btn-ghost text-red-600">Text</button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-card">
+        <div class="section-header">
+            <div>
+                <h2 class="section-title">TextHistory</h2>
+                <p class="section-description">Text, Text. </p>
+            </div>
+        </div>
+        <div class="section-body">
+            <div x-show="interactions.length === 0" class="empty-state section-card-muted">
+                <div class="empty-icon mono">IH</div>
+                <p class="text-sm">No dataText, TextResearchTextReviewTextAutoText. </p>
+            </div>
+
+            <div class="list-stack max-h-[28rem] overflow-y-auto pr-1 memory-stream memory-history-stream" x-show="interactions.length > 0">
+                <template x-for="inter in interactions" :key="inter.id">
+                    <div class="surface-panel-muted">
+                        <div class="flex flex-wrap items-center gap-2 mb-3">
+                            <span class="tag-pill" x-text="getInteractionTypeLabel(inter.type)"></span>
+                            <span class="text-sm text-slate-600" x-text="inter.stock_name || ''"></span>
+                            <span class="text-xs text-slate-400" x-text="formatDate(inter.timestamp)"></span>
+                        </div>
+                        <template x-if="inter.type === 'research_feedback'">
+                            <div class="text-sm leading-6 text-slate-700">
+                                <p>AI Text <span class="font-semibold" x-text="inter.context?.ai_recommendation || ''"></span>, TextDecision <span class="font-semibold" x-text="inter.user_feedback?.decision || ''"></span>. </p>
+                                <p x-show="inter.user_feedback?.feedback_on_research" class="mt-2 text-slate-500">Text: <span x-text="inter.user_feedback?.feedback_on_research"></span></p>
+                            </div>
+                        </template>
+                        <template x-if="inter.type === 'plan_adjustment'">
+                            <p class="text-sm leading-6 text-slate-700">Text: <span x-text="inter.user_adjustment"></span></p>
+                        </template>
+                        <template x-if="inter.type === 'follow_up_question'">
+                            <p class="text-sm leading-6 text-slate-700">Text: <span x-text="inter.user_question"></span></p>
+                        </template>
+                        <template x-if="inter.type === 'weekly_view'">
+                            <div class="text-sm leading-6 text-slate-700">
+                                <p class="text-slate-500">Text <span x-text="inter.week_id || ''"></span></p>
+                                <p class="mt-1">TextThis WeekText: <span x-text="inter.user_view || ''"></span></p>
+                            </div>
+                        </template>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </section>
+
+    <div x-show="showAddModal" class="fixed inset-0 z-50 overflow-y-auto" x-cloak>
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="modal-backdrop" @click="showAddModal = false"></div>
+            <div class="modal-shell">
+                <div class="modal-header">
+                    <div>
+                        <h3 class="section-title">Text</h3>
+                        <p class="section-description">ManualText, TextConfirmText. </p>
+                    </div>
+                </div>
+                <div class="modal-body form-grid">
+                    <div>
+                        <label class="field-label">Text...</label>
+                        <input type="text" x-model="newPref.trigger"
+                            class="control-input"
+                            placeholder="Text: AI TextBuyText">
+                    </div>
+                    <div>
+                        <label class="field-label">Text...</label>
+                        <input type="text" x-model="newPref.my_response"
+                            class="control-input"
+                            placeholder="Text: Text">
+                    </div>
+                    <div>
+                        <label class="field-label">Text</label>
+                        <select x-model="newPref.category" class="control-select">
+                            <option value="decision_style">DecisionText</option>
+                            <option value="risk_tolerance">RiskText</option>
+                            <option value="research_focus">ResearchText</option>
+                            <option value="communication_style">Text</option>
+                            <option value="general">Text</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button @click="showAddModal = false" class="btn-secondary">Cancel</button>
+                    <button @click="addPreference()"
+                        :disabled="!newPref.trigger || !newPref.my_response"
+                        class="btn-primary disabled:opacity-50">
+                        Text
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="showEditModal" class="fixed inset-0 z-50 overflow-y-auto" x-cloak>
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="modal-backdrop" @click="showEditModal = false"></div>
+            <div class="modal-shell">
+                <div class="modal-header">
+                    <div>
+                        <h3 class="section-title">Text</h3>
+                        <p class="section-description">TextSaveText, Text. </p>
+                    </div>
+                </div>
+                <div class="modal-body form-grid">
+                    <div>
+                        <label class="field-label">Text...</label>
+                        <input type="text" x-model="editingPref.trigger" class="control-input">
+                    </div>
+                    <div>
+                        <label class="field-label">Text...</label>
+                        <input type="text" x-model="editingPref.my_response" class="control-input">
+                    </div>
+                    <div>
+                        <label class="field-label">Text</label>
+                        <select x-model="editingPref.category" class="control-select">
+                            <option value="decision_style">DecisionText</option>
+                            <option value="risk_tolerance">RiskText</option>
+                            <option value="research_focus">ResearchText</option>
+                            <option value="communication_style">Text</option>
+                            <option value="general">Text</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button @click="showEditModal = false" class="btn-secondary">Cancel</button>
+                    <button @click="saveEditedPreference()" class="btn-primary">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function preferencesPage() {
+    return {
+        preferences: {{ preferences.preferences | tojson | safe }},
+        summary: {{ preferences.preference_summary | tojson | safe }},
+        interactions: {{ interactions | tojson | safe }},
+
+        learning: false,
+        editingSummary: false,
+        showAddModal: false,
+        showEditModal: false,
+
+        // Text
+        summaryEditResearchFocus: '',
+        summaryEditDislikedPatterns: '',
+        summaryEditCustomRules: '',
+
+        newPref: {
+            trigger: '',
+            my_response: '',
+            category: 'general'
+        },
+
+        editingPref: {},
+
+        init() {
+            // Text
+            this.summaryEditResearchFocus = (this.summary.research_focus || []).join(', ');
+            this.summaryEditDislikedPatterns = (this.summary.disliked_patterns || []).join(', ');
+            this.summaryEditCustomRules = (this.summary.custom_rules || []).join('\n');
+        },
+
+        getCategoryLabel(category) {
+            const labels = {
+                'decision_style': 'DecisionText',
+                'risk_tolerance': 'RiskText',
+                'research_focus': 'ResearchText',
+                'communication_style': 'Text',
+                'general': 'Text'
+            };
+            return labels[category] || category;
+        },
+
+        getInteractionTypeLabel(type) {
+            const labels = {
+                'research_feedback': 'ResearchText',
+                'plan_adjustment': 'Text',
+                'follow_up_question': 'Text',
+                'playbook_edit': 'PlaybookText',
+                'weekly_view': 'Text'
+            };
+            return labels[type] || type;
+        },
+
+        formatDate(dateStr) {
+            if (!dateStr) return '';
+            return dateStr.substring(0, 10);
+        },
+
+        async learnFromInteractions() {
+            this.learning = true;
+            try {
+                const response = await fetch('/api/preferences/learn', { method: 'POST' });
+                const result = await response.json();
+
+                if (result.extracted_preferences && result.extracted_preferences.length > 0) {
+                    alert(`SuccessText ${result.extracted_preferences.length} Text!`);
+                    window.location.reload();
+                } else {
+                    alert('Text, Text. ');
+                }
+            } catch (e) {
+                alert('TextFailed: ' + e.message);
+            }
+            this.learning = false;
+        },
+
+        async saveSummary() {
+            // Text
+            this.summary.research_focus = this.summaryEditResearchFocus
+                .split(',')
+                .map(s => s.trim())
+                .filter(s => s);
+            this.summary.disliked_patterns = this.summaryEditDislikedPatterns
+                .split(',')
+                .map(s => s.trim())
+                .filter(s => s);
+            this.summary.custom_rules = this.summaryEditCustomRules
+                .split('\n')
+                .map(s => s.trim())
+                .filter(s => s);
+
+            await fetch('/api/preferences', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ preference_summary: this.summary })
+            });
+
+            this.editingSummary = false;
+        },
+
+        async addPreference() {
+            const response = await fetch('/api/preferences/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this.newPref)
+            });
+            const result = await response.json();
+
+            if (result.success) {
+                this.showAddModal = false;
+                window.location.reload();
+            }
+        },
+
+        editPreference(pref) {
+            this.editingPref = { ...pref };
+            this.showEditModal = true;
+        },
+
+        async saveEditedPreference() {
+            await fetch(`/api/preferences/${this.editingPref.id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    trigger: this.editingPref.trigger,
+                    my_response: this.editingPref.my_response,
+                    category: this.editingPref.category
+                })
+            });
+
+            this.showEditModal = false;
+            window.location.reload();
+        },
+
+        async togglePreference(prefId) {
+            await fetch(`/api/preferences/${prefId}/toggle`, { method: 'POST' });
+
+            // TextStatus
+            const pref = this.preferences.find(p => p.id === prefId);
+            if (pref) pref.active = !pref.active;
+        },
+
+        async deletePreference(prefId) {
+            if (!confirm('Text?')) return;
+
+            await fetch(`/api/preferences/${prefId}`, { method: 'DELETE' });
+            this.preferences = this.preferences.filter(p => p.id !== prefId);
+        }
+    }
+}
+</script>
+{% endblock %}

@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+
+{% block title %}ResearchHistory - TextResearchText{% endblock %}
+
+{% block content %}
+<div x-data="researchHistoryPage()" class="space-y-6 archive-shell">
+    <section class="hero-band">
+        <div class="page-header">
+            <div>
+                <div class="page-kicker">ResearchText</div>
+                <h1 class="page-title">ResearchText</h1>
+                <p class="page-subtitle">TextResearchText, Text, TextResearchText, Text. </p>
+            </div>
+            <div class="toolbar">
+                <a href="/stocks" class="btn-secondary">TextStockText</a>
+            </div>
+        </div>
+    </section>
+
+    {% if history %}
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 archive-summary-strip">
+        <div class="metric-card archive-kicker-card">
+            <div class="metric-label">ResearchText</div>
+            <div class="metric-value numeric">{{ history|length }}</div>
+            <div class="metric-note">CurrentTextResearchText. </div>
+        </div>
+        <div class="metric-card archive-kicker-card">
+            <div class="metric-label">Text</div>
+            <div class="metric-value numeric">{{ history | selectattr('user_feedback') | list | length }}</div>
+            <div class="metric-note">TextResearchText. </div>
+        </div>
+        <div class="metric-card archive-kicker-card">
+            <div class="metric-label">TextStock</div>
+            <div class="metric-value numeric">{{ history | map(attribute='stock_id') | unique | list | length }}</div>
+            <div class="metric-note">ResearchText. </div>
+        </div>
+    </div>
+
+    <div class="space-y-4">
+        {% for h in history %}
+        <article class="section-card overflow-hidden archive-entry">
+            <div class="p-6 cursor-pointer hover:bg-slate-50 transition"
+                 @click="showReport = showReport === '{{ h.id }}' ? null : '{{ h.id }}'">
+                <div class="flex items-start justify-between gap-6">
+                    <div class="flex items-start gap-4 min-w-0">
+                        <div class="surface-panel-muted min-w-[84px] text-center archive-kicker-card">
+                            <p class="text-2xl font-bold text-slate-900 numeric">{{ h.date[8:10] if h.date else '--' }}</p>
+                            <p class="text-sm text-slate-500">{{ h.date[5:7] if h.date else '' }}Text</p>
+                        </div>
+
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h3 class="text-lg font-semibold text-slate-900">{{ h.stock_name }}</h3>
+                                <span class="tag-pill mono">{{ h.stock_id }}</span>
+                                {% if h.research_result %}
+                                <span class="status-badge {% if h.research_result.recommendation in ['Buy', 'Text'] %}status-positive{% elif h.research_result.recommendation in ['Sell', 'Text'] %}status-negative{% else %}status-neutral{% endif %}">
+                                    {{ h.research_result.recommendation }}
+                                </span>
+                                <span class="tag-pill-accent">
+                                    {{ h.research_result.confidence }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            {% if h.research_result and h.research_result.reasoning %}
+                            <p class="mt-3 text-sm leading-6 text-slate-600">{{ h.research_result.reasoning[:140] }}{% if h.research_result.reasoning|length > 140 %}...{% endif %}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4 shrink-0">
+                        {% if h.impact_assessment %}
+                        <div class="text-right">
+                            <p class="text-sm text-slate-500">Text</p>
+                            <p class="font-medium {% if h.research_result and h.research_result.thesis_impact == 'Text' %}text-green-600{% elif h.research_result and h.research_result.thesis_impact == 'Text' %}text-red-600{% else %}text-slate-600{% endif %}">
+                                {{ h.research_result.thesis_impact if h.research_result else '-' }}
+                            </p>
+                        </div>
+                        {% endif %}
+
+                        <svg class="w-5 h-5 text-slate-400 transform transition-transform"
+                             :class="showReport === '{{ h.id }}' ? 'rotate-180' : ''"
+                             fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+                <div x-show="showReport === '{{ h.id }}'" x-collapse
+                 class="border-t border-slate-200 p-6 bg-slate-50 archive-report-sheet">
+                {% if h.research_result %}
+                <div class="meta-kv mb-6">
+                    <div class="meta-kv-item">
+                        <div class="meta-kv-label">Text</div>
+                        <div class="meta-kv-value">{{ h.research_result.recommendation or '-' }}</div>
+                    </div>
+                    <div class="meta-kv-item">
+                        <div class="meta-kv-label">Text</div>
+                        <div class="meta-kv-value">{{ h.research_result.confidence or '-' }}</div>
+                    </div>
+                    <div class="meta-kv-item">
+                        <div class="meta-kv-label">Text</div>
+                        <div class="meta-kv-value">{{ h.research_result.thesis_impact or '-' }}</div>
+                    </div>
+                    <div class="meta-kv-item">
+                        <div class="meta-kv-label">Text</div>
+                        <div class="meta-kv-value">{{ h.research_result.position_suggestion or '-' }}</div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if h.research_result and (h.research_result.key_risks or h.research_result.key_catalysts) %}
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    {% if h.research_result.key_risks %}
+                    <div class="surface-panel">
+                        <p class="text-sm font-medium text-red-600 mb-2">TextRisk</p>
+                        <ul class="text-sm text-slate-700 space-y-1">
+                            {% for risk in h.research_result.key_risks %}
+                            <li>• {{ risk }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    {% if h.research_result.key_catalysts %}
+                    <div class="surface-panel">
+                        <p class="text-sm font-medium text-green-600 mb-2">Text</p>
+                        <ul class="text-sm text-slate-700 space-y-1">
+                            {% for catalyst in h.research_result.key_catalysts %}
+                            <li>• {{ catalyst }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if h.full_report %}
+                <div class="surface-panel archive-report-sheet">
+                    <h4 class="font-medium text-slate-900 mb-4">Text</h4>
+                    <div class="prose prose-sm max-w-none text-slate-700"
+                         x-html="marked.parse(`{{ h.full_report|replace('`', '\\`')|replace('\n', '\\n')|replace('\r', '') }}`)"></div>
+                </div>
+                {% endif %}
+
+                {% if h.user_feedback %}
+                <div class="mt-4 surface-panel-muted archive-feedback-panel">
+                    <p class="text-sm font-medium text-slate-900 mb-3">Text</p>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                            <p class="text-slate-500">TextDecision</p>
+                            <p class="font-semibold {% if h.user_feedback.decision in ['Buy', 'Text'] %}text-green-600{% elif h.user_feedback.decision in ['Sell', 'Text'] %}text-red-600{% else %}text-slate-900{% endif %}">
+                                {{ h.user_feedback.decision }}
+                            </p>
+                        </div>
+                        {% if h.user_feedback.direction_correct %}
+                        <div class="col-span-2">
+                            <p class="text-slate-500">ResearchText</p>
+                            <p class="text-slate-900">{{ h.user_feedback.direction_correct }}</p>
+                        </div>
+                        {% endif %}
+                        {% if h.user_feedback.next_direction %}
+                        <div class="col-span-2">
+                            <p class="text-slate-500">TextResearchText</p>
+                            <p class="text-slate-900">{{ h.user_feedback.next_direction }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% if h.user_feedback.tracking_metrics %}
+                    <div class="mt-3">
+                        <p class="text-slate-500 text-sm mb-2">Text</p>
+                        <div class="flex flex-wrap gap-2">
+                            {% for metric in h.user_feedback.tracking_metrics %}
+                            <span class="tag-pill-accent">{{ metric }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <div class="mt-4">
+                    {% if not h.user_feedback %}
+                    <button x-show="openFeedbackFormId !== '{{ h.id }}'"
+                        @click.stop="openFeedbackForm('{{ h.id }}', '{{ h.stock_id }}', {{ (h.research_result or {})|tojson }}, null)"
+                        class="btn-positive">
+                        Text
+                    </button>
+                    {% endif %}
+                    {% if h.user_feedback %}
+                    <button x-show="openFeedbackFormId !== '{{ h.id }}'"
+                        @click.stop="openFeedbackForm('{{ h.id }}', '{{ h.stock_id }}', {{ (h.research_result or {})|tojson }}, {{ (h.user_feedback or {})|tojson }})"
+                        class="btn-ghost text-blue-600">
+                        Text
+                    </button>
+                    {% endif %}
+                    <div x-show="openFeedbackFormId === '{{ h.id }}'" class="mt-3 surface-panel border border-green-200 archive-feedback-panel">
+                        <p class="text-sm font-medium text-green-900 mb-3">Text(TextText)</p>
+                        <div class="space-y-3 text-sm">
+                            <div>
+                                <label class="field-label">ResearchText?Text?</label>
+                                <textarea x-model="feedbackForm.feedback_on_research"
+                                    class="control-textarea" rows="2"
+                                    placeholder="Text: ResearchText, TextAnalysis..."></textarea>
+                            </div>
+                            <div>
+                                <label class="field-label">TextResearch?</label>
+                                <div class="flex gap-4">
+                                    <label class="inline-flex items-center gap-2"><input type="radio" x-model="feedbackForm.needs_further_research" value="no" class="control-radio"> Text</label>
+                                    <label class="inline-flex items-center gap-2"><input type="radio" x-model="feedbackForm.needs_further_research" value="yes" class="control-radio"> Text</label>
+                                </div>
+                                <textarea x-show="feedbackForm.needs_further_research === 'yes'" x-model="feedbackForm.further_research_direction"
+                                    class="control-textarea mt-2" rows="2"
+                                    placeholder="TextResearchText..."></textarea>
+                            </div>
+                            <div>
+                                <label class="field-label">TextResearch, TextDecisionText?</label>
+                                <div class="flex flex-wrap gap-2">
+                                    <template x-for="opt in ['Buy','Text','Text','Text','Sell']" :key="opt">
+                                        <button type="button" @click="feedbackForm.final_decision = opt"
+                                            :class="feedbackForm.final_decision === opt ? 'tag-pill-accent' : 'tag-pill'"
+                                            class="transition" x-text="opt"></button>
+                                    </template>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="field-label">Text(Text)</label>
+                                <div class="flex gap-2">
+                                    <input type="text" x-model="feedbackForm.newMetric" @keyup.enter="addFeedbackMetric()"
+                                        class="control-input" placeholder="Text">
+                                    <button @click="addFeedbackMetric()" class="btn-secondary">Text</button>
+                                </div>
+                                <div class="flex flex-wrap gap-1 mt-2">
+                                    <template x-for="(m,i) in feedbackForm.tracking_metrics" :key="i">
+                                        <span class="tag-pill-accent">
+                                            <span x-text="m"></span>
+                                            <button @click="feedbackForm.tracking_metrics.splice(i,1)" class="text-blue-600">×</button>
+                                        </span>
+                                    </template>
+                                </div>
+                            </div>
+                            <div class="flex gap-2 pt-2">
+                                <button @click="submitRecordFeedback('{{ h.stock_id }}', '{{ h.id }}', {{ (h.research_result or {})|tojson }})"
+                                    :disabled="savingFeedback || !feedbackForm.final_decision"
+                                    class="btn-positive disabled:opacity-50">
+                                    <span x-show="!savingFeedback">SaveText</span>
+                                    <span x-show="savingFeedback">SaveText...</span>
+                                </button>
+                                <button @click="openFeedbackFormId = null" class="btn-secondary">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {% if h.research_result and h.research_result.follow_up_items %}
+                <div class="mt-4 surface-panel">
+                    <p class="text-sm font-medium text-slate-900 mb-2">Text</p>
+                    <div class="flex flex-wrap gap-2">
+                        {% for item in h.research_result.follow_up_items %}
+                        <span class="tag-pill-accent">{{ item }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <div class="mt-4 text-right">
+                    <a href="/stock/{{ h.stock_id }}" class="btn-secondary">
+                        Text {{ h.stock_name }} Details
+                    </a>
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+
+    {% else %}
+    <section class="section-card">
+        <div class="empty-state">
+            <div class="empty-icon mono">AR</div>
+            <h2 class="text-xl font-semibold text-slate-900">No dataResearchHistory</h2>
+            <p class="mt-2 text-sm text-slate-500">TextResearchText, TextHistoryText. </p>
+            <div class="mt-6">
+                <a href="/stocks" class="btn-primary">TextStockText</a>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+</div>
+
+<script>
+function researchHistoryPage() {
+    return {
+        showReport: null,
+        openFeedbackFormId: null,
+        savingFeedback: false,
+        feedbackForm: {
+            feedback_on_research: '',
+            needs_further_research: 'no',
+            further_research_direction: '',
+            final_decision: '',
+            tracking_metrics: [],
+            newMetric: ''
+        },
+        openFeedbackForm(recordId, stockId, researchResult, existingFeedback) {
+            this.openFeedbackFormId = recordId;
+            this.feedbackForm = {
+                feedback_on_research: (existingFeedback && existingFeedback.direction_correct) || '',
+                needs_further_research: (existingFeedback && existingFeedback.next_direction) ? 'yes' : 'no',
+                further_research_direction: (existingFeedback && existingFeedback.next_direction) || '',
+                final_decision: (existingFeedback && existingFeedback.decision) || 'Text',
+                tracking_metrics: (existingFeedback && existingFeedback.tracking_metrics) ? [...existingFeedback.tracking_metrics] : [],
+                newMetric: ''
+            };
+        },
+        addFeedbackMetric() {
+            const m = (this.feedbackForm.newMetric || '').trim();
+            if (m && !this.feedbackForm.tracking_metrics.includes(m)) {
+                this.feedbackForm.tracking_metrics.push(m);
+                this.feedbackForm.newMetric = '';
+            }
+        },
+        async submitRecordFeedback(stockId, recordId, researchResult) {
+            this.savingFeedback = true;
+            try {
+                const conclusion = researchResult.conclusion || researchResult;
+                const r = await fetch(`/api/research/${stockId}/feedback`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        record_id: recordId,
+                        feedback: {
+                            feedback_on_research: this.feedbackForm.feedback_on_research,
+                            needs_further_research: this.feedbackForm.needs_further_research,
+                            further_research_direction: this.feedbackForm.further_research_direction,
+                            final_decision: this.feedbackForm.final_decision,
+                            tracking_metrics: this.feedbackForm.tracking_metrics
+                        },
+                        research_result: { conclusion: conclusion }
+                    })
+                });
+                const data = await r.json();
+                if (data.success) {
+                    this.openFeedbackFormId = null;
+                    window.location.reload();
+                } else {
+                    alert('SaveFailed: ' + (data.error || 'TextError'));
+                }
+            } catch (e) {
+                alert('SaveFailed: ' + e.message);
+            }
+            this.savingFeedback = false;
+        }
+    };
+}
+</script>
+{% endblock %}

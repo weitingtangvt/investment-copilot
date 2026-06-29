@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+
+{% block title %}Text - TextResearchText{% endblock %}
+
+{% block content %}
+<div class="space-y-6" x-data="playbook()">
+    <div class="page-header">
+        <div>
+            <div class="page-kicker">Text</div>
+            <h1 class="page-title">Text Playbook</h1>
+            <p class="page-subtitle">TextStockText, TextTradeText. </p>
+        </div>
+        <a href="/" class="btn-secondary">Text</a>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <aside class="xl:col-span-3">
+            <div class="section-card">
+                <div class="section-header">
+                    <h2 class="section-title">StockText</h2>
+                </div>
+                <div class="section-body p-0">
+                    {% if stocks %}
+                    <div class="divide-y divide-slate-100">
+                        {% for stock in stocks %}
+                        <button @click="selectStock('{{ stock.stock_id }}', '{{ stock.stock_name }}')"
+                            :class="currentStockId === '{{ stock.stock_id }}' ? 'bg-blue-50 border-l-2 border-l-blue-600' : 'hover:bg-slate-50'"
+                            class="w-full text-left px-4 py-3 transition">
+                            <div class="font-medium text-sm text-slate-900">{{ stock.stock_name }}</div>
+                            {% if stock.ticker %}
+                            <div class="text-xs text-slate-400 numeric mt-0.5">{{ stock.ticker }}</div>
+                            {% endif %}
+                            <template x-if="savedStocks['{{ stock.stock_id }}']">
+                                <span class="inline-block mt-1 text-xs text-green-600">Text</span>
+                            </template>
+                        </button>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <p class="text-sm">TextStock. </p>
+                        <a href="/add-stock" class="btn-primary mt-3">TextStock</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </aside>
+
+        <main class="xl:col-span-9">
+            <template x-if="!currentStockId">
+                <div class="section-card-muted p-12 text-center">
+                    <p class="text-slate-500">TextStockText. </p>
+                </div>
+            </template>
+
+            <template x-if="currentStockId">
+                <div class="section-card">
+                    <div class="section-header">
+                        <div>
+                            <h2 class="section-title" x-text="currentStockName + ' - Text'"></h2>
+                            <p class="section-description">Text, TextTradeText. </p>
+                        </div>
+                        <div class="toolbar">
+                            <button @click="saveFramework()" :disabled="saving" class="btn-primary">
+                                <span x-show="!saving">Save</span>
+                                <span x-show="saving">SaveText...</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="section-body space-y-8">
+
+                        <div>
+                            <h3 class="text-base font-semibold text-slate-900 mb-1">1. Text?</h3>
+                            <p class="text-sm text-slate-500 mb-3">Text 1-2 Text</p>
+                            <textarea x-model="form.main_driver" rows="3" placeholder="Text: Text AI Text"
+                                class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"></textarea>
+                        </div>
+
+                        <div>
+                            <h3 class="text-base font-semibold text-slate-900 mb-1">2. CurrentText?</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                                <div>
+                                    <label class="text-sm text-slate-600 block mb-1">TradeText?</label>
+                                    <input x-model="form.priced_in_year" type="text" placeholder="Text: 2025E"
+                                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="text-sm text-slate-600 block mb-1">DefaultText?</label>
+                                    <input x-model="form.priced_in_growth" type="text" placeholder="Text: 30% YoY"
+                                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="text-sm text-slate-600 block mb-1">DefaultText?</label>
+                                    <input x-model="form.priced_in_margin" type="text" placeholder="Text: 55% gross margin"
+                                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                                <div>
+                                    <label class="text-sm text-slate-600 block mb-1">DefaultText?</label>
+                                    <input x-model="form.priced_in_competition" type="text" placeholder="Text: Text"
+                                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-base font-semibold text-slate-900 mb-3">3. Text</h3>
+                            <div class="space-y-4">
+                                <template x-for="scenario in ['bull', 'base', 'bear']" :key="scenario">
+                                    <div class="section-card-muted p-4">
+                                        <div class="flex items-center gap-2 mb-3">
+                                            <span :class="{
+                                                'bg-green-100 text-green-700': scenario === 'bull',
+                                                'bg-blue-100 text-blue-700': scenario === 'base',
+                                                'bg-red-100 text-red-700': scenario === 'bear'
+                                            }" class="status-badge font-semibold"
+                                                x-text="scenario === 'bull' ? 'Bull Text' : scenario === 'base' ? 'Base Text' : 'Bear Text'"></span>
+                                        </div>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <div class="md:col-span-2">
+                                                <label class="text-sm text-slate-600 block mb-1">Text</label>
+                                                <textarea x-model="form.scenarios[scenario].assumption" rows="2" placeholder="Text?"
+                                                    class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                                            </div>
+                                            <div>
+                                                <label class="text-sm text-slate-600 block mb-1">Text</label>
+                                                <input x-model="form.scenarios[scenario].target_price" type="text" placeholder="Text: $150"
+                                                    class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            </div>
+                                            <div>
+                                                <label class="text-sm text-slate-600 block mb-1" x-text="scenario === 'bear' ? 'Text' : 'Text'"></label>
+                                                <input x-model="form.scenarios[scenario].upside" type="text" placeholder="Text: +40% / -20%"
+                                                    class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            </div>
+                                            <div>
+                                                <label class="text-sm text-slate-600 block mb-1">Text</label>
+                                                <input x-model="form.scenarios[scenario].probability" type="text" placeholder="Text: 30%"
+                                                    class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-base font-semibold text-slate-900 mb-1">4. Text</h3>
+                            <div class="space-y-3 mt-3">
+                                <div>
+                                    <label class="text-sm text-slate-600 block mb-1">Text 3 Text?</label>
+                                    <textarea x-model="form.catalyst" rows="2" placeholder="Text: Q2 Text AI TextWeightText, Text"
+                                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                                </div>
+                                <div>
+                                    <label class="text-sm text-slate-600 block mb-1">Text, Text/Text?</label>
+                                    <textarea x-model="form.patience" rows="2" placeholder="Text: Text 15% Text, Text 8% Text"
+                                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-base font-semibold text-slate-900 mb-1">5. ErrorText</h3>
+                            <p class="text-sm text-slate-500 mb-3">Text, Text thesis Text?</p>
+                            <textarea x-model="form.invalidation" rows="3" placeholder="Text: Text 15%, Text, Text"
+                                class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                        </div>
+
+                        <div>
+                            <h3 class="text-base font-semibold text-slate-900 mb-1">6. Text</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                                <div>
+                                    <label class="text-sm text-slate-600 block mb-1">Text</label>
+                                    <select x-model="form.odds_rating"
+                                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="">Text</option>
+                                        <option value="Text">Text</option>
+                                        <option value="Text">Text</option>
+                                        <option value="Text">Text</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="text-sm text-slate-600 block mb-1">Text</label>
+                                    <select x-model="form.position_type"
+                                        class="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                        <option value="">Text</option>
+                                        <option value="Text">Text</option>
+                                        <option value="TradeText">TradeText</option>
+                                        <option value="WatchText">WatchText</option>
+                                        <option value="Text">Text</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </template>
+        </main>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function playbook() {
+    return {
+        currentStockId: null,
+        currentStockName: '',
+        saving: false,
+        savedStocks: {},
+        SAMPLE: {
+            main_driver: '',
+            priced_in_year: '',
+            priced_in_growth: '',
+            priced_in_margin: '',
+            priced_in_competition: '',
+            scenarios: {
+                bull: { assumption: '', target_price: '', upside: '', probability: '' },
+                base: { assumption: '', target_price: '', upside: '', probability: '' },
+                bear: { assumption: '', target_price: '', upside: '', probability: '' }
+            },
+            catalyst: '',
+            patience: '',
+            invalidation: '',
+            odds_rating: '',
+            position_type: ''
+        },
+
+        resetForm() {
+            this.form = {
+                main_driver: '',
+                priced_in_year: '',
+                priced_in_growth: '',
+                priced_in_margin: '',
+                priced_in_competition: '',
+                scenarios: {
+                    bull: { assumption: '', target_price: '', upside: '', probability: '' },
+                    base: { assumption: '', target_price: '', upside: '', probability: '' },
+                    bear: { assumption: '', target_price: '', upside: '', probability: '' }
+                },
+                catalyst: '',
+                patience: '',
+                invalidation: '',
+                odds_rating: '',
+                position_type: ''
+            };
+        },
+
+        async selectStock(stockId, stockName) {
+            this.currentStockId = stockId;
+            this.currentStockName = stockName;
+            this.resetForm();
+
+            try {
+                const resp = await fetch(`/api/playbook/${stockId}`);
+                const data = await resp.json();
+                if (data.investment_framework) {
+                    const fw = data.investment_framework;
+                    this.form.main_driver = fw.main_driver || '';
+                    this.form.priced_in_year = fw.priced_in_year || '';
+                    this.form.priced_in_growth = fw.priced_in_growth || '';
+                    this.form.priced_in_margin = fw.priced_in_margin || '';
+                    this.form.priced_in_competition = fw.priced_in_competition || '';
+                    if (fw.scenarios) {
+                        for (const s of ['bull', 'base', 'bear']) {
+                            if (fw.scenarios[s]) {
+                                this.form.scenarios[s] = { ...this.form.scenarios[s], ...fw.scenarios[s] };
+                            }
+                        }
+                    }
+                    this.form.catalyst = fw.catalyst || '';
+                    this.form.patience = fw.patience || '';
+                    this.form.invalidation = fw.invalidation || '';
+                    this.form.odds_rating = fw.odds_rating || '';
+                    this.form.position_type = fw.position_type || '';
+                    this.savedStocks[stockId] = true;
+                }
+            } catch (e) {
+                console.error('Load playbook Failed:', e);
+            }
+        },
+
+        async saveFramework() {
+            this.saving = true;
+            try {
+                await fetch(`/api/playbook/${this.currentStockId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ investment_framework: this.form })
+                });
+                this.savedStocks[this.currentStockId] = true;
+                alert('SaveSuccess!');
+            } catch (e) {
+                alert('SaveFailed: ' + e.message);
+            }
+            this.saving = false;
+        }
+    };
+}
+</script>
+{% endblock %}

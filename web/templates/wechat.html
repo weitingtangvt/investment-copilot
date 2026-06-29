@@ -1,0 +1,1057 @@
+{% extends "base.html" %}
+
+{% block title %}Text - TextResearchText{% endblock %}
+
+{% block content %}
+<div x-data="wechatFeed()" x-init="init()" class="space-y-6">
+    <div class="page-header">
+        <div class="max-w-4xl">
+            <div class="page-kicker">TextResearchText</div>
+            <h1 class="page-title">TextResearchText</h1>
+            <p class="page-subtitle">TextResearchText. Text, Text. </p>
+        </div>
+        <div class="toolbar">
+            <button @click="syncAccounts()"
+                :disabled="syncing"
+                class="btn-secondary">
+                <span x-show="!syncing">Text</span>
+                <span x-show="syncing">Text...</span>
+            </button>
+            <button @click="checkHealth()"
+                :disabled="checking"
+                class="btn-secondary">
+                <span x-show="!checking">Text</span>
+                <span x-show="checking">Text...</span>
+            </button>
+            <button @click="showConfig = true" class="btn-secondary">Text</button>
+            <button @click="refreshFeed()"
+                :disabled="loading"
+                class="btn-primary">
+                <span x-show="!loading">RefreshText</span>
+                <span x-show="loading">LoadText...</span>
+            </button>
+        </div>
+    </div>
+
+    <div x-show="!serviceHealthy && healthChecked" class="alert-banner error">
+        WeWe RSS Text. TextConfirmText, Text. 
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <section class="section-card xl:col-span-4 overflow-hidden">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Text</h2>
+                    <p class="section-description">Text, Text, Text. </p>
+                </div>
+                <span class="status-badge" :class="serviceHealthy ? 'status-positive' : 'status-warning'" x-text="serviceHealthy ? 'Text' : 'Text'"></span>
+            </div>
+            <div class="section-body space-y-4">
+                <div class="detail-grid">
+                    <div class="fact-card">
+                        <div class="metric-label">Text</div>
+                        <div class="metric-value numeric" x-text="followedAccounts.length"></div>
+                    </div>
+                    <div class="fact-card">
+                        <div class="metric-label">Text</div>
+                        <p class="block-copy mt-2" x-text="lastRefreshTime ? getCacheStatus() : 'No dataText'"></p>
+                    </div>
+                    <div class="fact-card">
+                        <div class="metric-label">Text</div>
+                        <p class="block-copy mt-2 mono break-all" x-text="weweRssUrl"></p>
+                    </div>
+                </div>
+
+                <div x-show="followedAccounts.length > 0" class="list-stack">
+                    <template x-for="account in followedAccounts" :key="account.mp_id">
+                        <div class="list-row">
+                            <div class="min-w-0">
+                                <div class="font-semibold text-slate-900 truncate" x-text="account.name"></div>
+                                <div class="mt-1 text-xs text-slate-500 mono" x-text="account.mp_id"></div>
+                            </div>
+                            <button @click="removeAccount(account.mp_id)" class="btn-ghost">Text</button>
+                        </div>
+                    </template>
+                </div>
+
+                <div x-show="followedAccounts.length === 0" class="section-card-muted empty-state !py-8">
+                    <div class="empty-icon mono">WX</div>
+                    <p class="text-sm">CurrentTextResearchText. </p>
+                </div>
+
+                <div class="surface-panel">
+                    <div class="block-title">ManualText</div>
+                    <p class="block-copy mt-2">TextAutoText, Text mp_id Text. </p>
+                    <div class="grid grid-cols-1 gap-3 mt-4">
+                        <div>
+                            <label class="field-label">Text ID</label>
+                            <input type="text"
+                                x-model.trim="newMpId"
+                                placeholder="Text gh_xxxxxxxx"
+                                class="control-input mono control-compact">
+                        </div>
+                        <div>
+                            <label class="field-label">Text</label>
+                            <input type="text"
+                                x-model.trim="newName"
+                                placeholder="Text TextWatch"
+                                class="control-input control-compact">
+                        </div>
+                        <div class="toolbar justify-end">
+                            <button @click="addAccount()"
+                                :disabled="adding || !newMpId"
+                                class="btn-primary">
+                                <span x-show="!adding">Text</span>
+                                <span x-show="adding">Text...</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="surface-panel-muted">
+                    <div class="block-title">Text</div>
+                    <p class="block-copy mt-2">Text, Text. TextResearchText, Text. </p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section-card xl:col-span-8 overflow-hidden">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Text</h2>
+                    <p class="section-description">Text, Text, Text. </p>
+                </div>
+                <div class="toolbar-group text-sm text-slate-500">
+                    <span class="tag-pill"><span>Text</span><span class="numeric text-slate-900" x-text="articles.length"></span></span>
+                    <span class="tag-pill"><span>TextStatus</span><span class="numeric text-slate-900" x-text="summary ? 'TextGenerate' : 'Text'"></span></span>
+                </div>
+            </div>
+            <div class="section-body space-y-4">
+                <div class="fact-grid">
+                    <div class="fact-card">
+                        <div class="metric-label">WatchText</div>
+                        <div class="metric-value numeric" x-text="summaryDays"></div>
+                        <div class="metric-note">Text</div>
+                    </div>
+                    <div class="fact-card">
+                        <div class="metric-label">Text</div>
+                        <div class="metric-value numeric" x-text="summaryMaxArticles"></div>
+                        <div class="metric-note">Text</div>
+                    </div>
+                    <div class="fact-card">
+                        <div class="metric-label">Text</div>
+                        <div class="metric-value numeric" x-text="summaryFetchedCount || 0"></div>
+                        <div class="metric-note">Text</div>
+                    </div>
+                    <div class="fact-card">
+                        <div class="metric-label">Text</div>
+                        <div class="metric-value text-base" x-text="summarySavedTo ? 'TextSave' : 'Text'"></div>
+                        <div class="metric-note" x-text="summarySavedTo ? 'Text' : 'Text'"></div>
+                    </div>
+                </div>
+
+                <div class="surface-panel">
+                    <div class="grid grid-cols-1 lg:grid-cols-[repeat(2,minmax(0,180px))_1fr] gap-4">
+                        <div>
+                            <label class="field-label">Text</label>
+                            <input type="number"
+                                x-model="summaryDays"
+                                min="1"
+                                max="30"
+                                class="control-input numeric control-compact">
+                        </div>
+                        <div>
+                            <label class="field-label">Text</label>
+                            <input type="number"
+                                x-model="summaryMaxArticles"
+                                min="1"
+                                max="20"
+                                class="control-input numeric control-compact">
+                        </div>
+                        <div class="flex items-end">
+                            <div class="toolbar w-full justify-start lg:justify-end">
+                                <button @click="summarizeArticles()"
+                                    :disabled="summarizing || followedAccounts.length === 0"
+                                    class="btn-secondary">
+                                    <span x-show="!summarizing">GenerateTextSummary</span>
+                                    <span x-show="summarizing">Text...</span>
+                                </button>
+                                <button @click="summarizeInsights()"
+                                    :disabled="summarizingInsights || followedAccounts.length === 0"
+                                    class="btn-primary">
+                                    <span x-show="!summarizingInsights">GenerateText</span>
+                                    <span x-show="summarizingInsights">AnalysisText...</span>
+                                </button>
+                                <button @click="showManualInput = true" class="btn-ghost">ManualText</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div x-show="summary" class="surface-panel">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <div class="block-title">TextResult</div>
+                            <p class="block-copy mt-2">TextCurrentTextGenerateTextResult, Text, TextWatchText thesis Text. </p>
+                        </div>
+                        <button @click="summary = ''; summarySavedTo = ''; summaryArticleCount = 0; summaryFetchedCount = 0"
+                            class="btn-ghost">
+                            TextResult
+                        </button>
+                    </div>
+
+                    <div class="kv-list mt-5">
+                        <div class="kv-row">
+                            <span class="kv-key">Text</span>
+                            <span class="kv-value numeric" x-text="summaryArticleCount || 0"></span>
+                        </div>
+                        <div class="kv-row">
+                            <span class="kv-key">SuccessText</span>
+                            <span class="kv-value numeric" x-text="summaryFetchedCount || 0"></span>
+                        </div>
+                        <div class="kv-row">
+                            <span class="kv-key">SaveText</span>
+                            <span class="kv-value mono break-all" x-text="summarySavedTo || 'Text'"></span>
+                        </div>
+                    </div>
+
+                    <div class="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-4">
+                        <div class="text-sm leading-7 text-slate-800 whitespace-pre-wrap" x-text="summary"></div>
+                    </div>
+                </div>
+
+                <div x-show="!summary" class="section-card-muted empty-state !py-10">
+                    <div class="empty-icon mono">AI</div>
+                    <p class="text-sm">TextSummaryText, TextResearchText. </p>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <section class="section-card overflow-hidden">
+        <div class="section-header">
+            <div>
+                <h2 class="section-title">Text</h2>
+                <p class="section-description">TextResearchText, Text. </p>
+            </div>
+            <div class="toolbar-group text-sm text-slate-500">
+                <span class="tag-pill"><span>Text</span><span class="numeric text-slate-900" x-text="articles.length"></span></span>
+                <span class="tag-pill"><span>Text</span><span class="numeric text-slate-900" x-text="lastRefreshTime ? getCacheStatus() : 'Text'"></span></span>
+            </div>
+        </div>
+        <div class="section-body">
+            <div x-show="articles.length > 0" class="feed-stack">
+                <template x-for="article in articles" :key="article.link || article.title">
+                    <article class="feed-entry">
+                        <div class="flex items-start justify-between gap-4">
+                            <div class="min-w-0 flex-1">
+                                <div class="feed-meta">
+                                    <span class="status-badge" :class="article.account_name === 'ManualText' ? 'status-neutral' : 'status-positive'" x-text="article.account_name || 'Text'"></span>
+                                    <span class="mono" x-text="formatTime(article.published)"></span>
+                                    <span x-show="article.full_content" class="tag-pill">Text</span>
+                                </div>
+                                <h3 class="feed-title mt-3" x-text="article.title"></h3>
+                                <p class="feed-copy mt-3 line-clamp-3"
+                                   x-text="article.summary && article.summary.trim() ? article.summary : ((article.full_content || 'No dataSummary').slice(0, 220) + ((article.full_content || '').length > 220 ? '...' : ''))"></p>
+                            </div>
+                            <div class="toolbar shrink-0">
+                                <template x-if="article.link">
+                                    <a :href="article.link" target="_blank" class="btn-secondary">Text</a>
+                                </template>
+                                <template x-if="!article.link && article.full_content">
+                                    <button @click="showArticleContent(article)" class="btn-secondary">Text</button>
+                                </template>
+                            </div>
+                        </div>
+                    </article>
+                </template>
+            </div>
+
+            <div x-show="!loading && articles.length === 0" class="section-card-muted empty-state !py-10">
+                <div class="empty-icon mono">FEED</div>
+                <p class="text-sm">No dataText, TextResearchTextManualText. </p>
+            </div>
+
+            <div x-show="loading && articles.length === 0" class="section-card-muted loading-state !py-10">
+                TextRefreshText...
+            </div>
+        </div>
+    </section>
+
+    <div x-show="showConfig"
+        class="fixed inset-0 z-50 overflow-y-auto"
+        @click.self="showConfig = false"
+        x-cloak>
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="modal-backdrop"></div>
+            <div class="modal-shell">
+                <div class="modal-header">
+                    <div>
+                        <h3 class="section-title">WeWe RSS Text</h3>
+                        <p class="section-description">SettingsText. </p>
+                    </div>
+                    <button @click="showConfig = false" class="btn-ghost">Text</button>
+                </div>
+
+                <div class="modal-body form-grid">
+                    <div>
+                        <label class="field-label">Text</label>
+                        <input type="text"
+                            x-model="weweRssUrl"
+                            placeholder="http://localhost:4000"
+                            class="control-input mono">
+                        <p class="field-hint">DefaultText `http://localhost:4000`, Text. </p>
+                    </div>
+
+                    <div class="surface-panel-muted">
+                        <div class="block-title">Text</div>
+                        <p class="block-copy mt-2">Text, Text `WeWe-RSSText.md`. Text `docker-compose up -d`. </p>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button @click="showConfig = false" class="btn-secondary">Cancel</button>
+                    <button @click="saveConfig()"
+                        :disabled="savingConfig"
+                        class="btn-primary">
+                        <span x-show="!savingConfig">SaveText</span>
+                        <span x-show="savingConfig">SaveText...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="showManualInput"
+        class="fixed inset-0 z-50 overflow-y-auto"
+        @click.self="showManualInput = false"
+        x-cloak>
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="modal-backdrop"></div>
+            <div class="modal-shell" style="width:min(100%, 64rem);">
+                <div class="modal-header">
+                    <div>
+                        <h3 class="section-title">ManualText</h3>
+                        <p class="section-description">Text, Text. </p>
+                    </div>
+                    <button @click="showManualInput = false" class="btn-ghost">Text</button>
+                </div>
+
+                <div class="modal-body form-grid">
+                    <div>
+                        <label class="field-label">Text</label>
+                        <input type="text"
+                            x-model="manualArticle.title"
+                            placeholder="Text"
+                            class="control-input">
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="field-label">TextDate</label>
+                            <input type="date"
+                                x-model="manualArticle.date"
+                                class="control-input">
+                            <p class="field-hint">TextCurrentDate. </p>
+                        </div>
+                        <div>
+                            <label class="field-label">Text</label>
+                            <input type="text"
+                                x-model="manualArticle.link"
+                                placeholder="https://..."
+                                class="control-input mono">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="field-label">Text</label>
+                        <textarea
+                            x-model="manualArticle.content"
+                            rows="14"
+                            placeholder="Text..."
+                            class="control-textarea mono"></textarea>
+                        <p class="field-hint">Text, TextGenerate. </p>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button @click="showManualInput = false; resetManualArticle()" class="btn-secondary">Cancel</button>
+                    <button @click="submitManualArticle()"
+                        :disabled="submittingManual || !manualArticle.title || !manualArticle.content"
+                        class="btn-primary">
+                        <span x-show="!submittingManual">Text</span>
+                        <span x-show="submittingManual">Text...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="showArticlePopup"
+        class="fixed inset-0 z-50 overflow-y-auto"
+        @click.self="showArticlePopup = false"
+        x-cloak>
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="modal-backdrop"></div>
+            <div class="modal-shell" style="width:min(100%, 72rem);">
+                <div class="modal-header">
+                    <div class="min-w-0">
+                        <h3 class="section-title" x-text="currentArticle.title || 'Text'"></h3>
+                        <p class="section-description">
+                            <span x-text="currentArticle.account_name || 'Text'"></span>
+                            <span class="mx-2">·</span>
+                            <span class="mono" x-text="formatTime(currentArticle.published)"></span>
+                        </p>
+                    </div>
+                    <button @click="showArticlePopup = false" class="btn-ghost">Text</button>
+                </div>
+
+                <div class="modal-body">
+                    <div class="text-sm leading-7 text-slate-800 whitespace-pre-wrap" x-text="currentArticle.full_content"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function wechatFeed() {
+    return {
+        followedAccounts: [],
+        articles: [],
+        loading: false,
+        adding: false,
+        checking: false,
+        syncing: false,
+        newMpId: '',
+        newName: '',
+        showConfig: false,
+        weweRssUrl: 'http://localhost:4000',
+        savingConfig: false,
+        serviceHealthy: false,
+        healthChecked: false,
+        lastRefreshTime: null,
+        cacheExpiryMinutes: 120, // Text2Text
+        summaryDays: 1, // DefaultText24Text
+        summaryMaxArticles: 15, // Default15Text
+        summarizing: false,
+        summarizingInsights: false,
+        summary: '',
+        summaryArticleCount: 0,
+        summaryFetchedCount: 0,
+        summarySavedTo: '',
+        showManualInput: false,
+        submittingManual: false,
+        manualArticle: {
+            title: '',
+            date: '',
+            link: '',
+            content: ''
+        },
+        showArticlePopup: false,
+        currentArticle: {},
+        insightsCacheKey: 'wechat_insights_cache',
+        insightsCacheExpiry: 24 * 60 * 60 * 1000, // 24Text
+
+        async init() {
+            await this.loadConfig();
+            await this.checkHealth();
+
+            // LoadText(Text)
+            await this.loadInsightsFromCache();
+
+            // TextLoadText
+            const cached = this.loadFromCache();
+            if (cached) {
+                this.articles = cached.articles;
+                this.lastRefreshTime = cached.timestamp;
+                console.log('TextLoadText:', this.articles.length);
+            }
+
+            // Text, TextRefresh
+            if (this.serviceHealthy && this.followedAccounts.length > 0) {
+                if (!cached || this.isCacheExpired()) {
+                    await this.refreshFeed();
+                }
+            }
+        },
+
+        loadFromCache() {
+            try {
+                const cacheKey = 'wechat_articles_cache';
+                const cached = localStorage.getItem(cacheKey);
+                if (!cached) return null;
+
+                const data = JSON.parse(cached);
+
+                // TextCurrentText
+                const cachedAccountIds = data.accountIds || [];
+                const currentAccountIds = this.followedAccounts.map(a => a.mp_id).sort();
+
+                if (JSON.stringify(cachedAccountIds.sort()) !== JSON.stringify(currentAccountIds)) {
+                    console.log('Text, Text');
+                    localStorage.removeItem(cacheKey);
+                    return null;
+                }
+
+                return data;
+            } catch (e) {
+                console.error('LoadTextFailed:', e);
+                return null;
+            }
+        },
+
+        saveToCache(articles) {
+            try {
+                const cacheKey = 'wechat_articles_cache';
+                const data = {
+                    articles: articles,
+                    timestamp: Date.now(),
+                    accountIds: this.followedAccounts.map(a => a.mp_id)
+                };
+                localStorage.setItem(cacheKey, JSON.stringify(data));
+                this.lastRefreshTime = data.timestamp;
+                console.log('TextSaveText:', articles.length, 'Text');
+            } catch (e) {
+                console.error('SaveTextFailed:', e);
+            }
+        },
+
+        isCacheExpired() {
+            if (!this.lastRefreshTime) return true;
+            const now = Date.now();
+            const elapsed = (now - this.lastRefreshTime) / 1000 / 60; // Text
+            return elapsed >= this.cacheExpiryMinutes;
+        },
+
+        getCacheStatus() {
+            if (!this.lastRefreshTime) return '';
+            const now = Date.now();
+            const elapsed = Math.floor((now - this.lastRefreshTime) / 1000 / 60);
+            if (elapsed < 1) return 'Text';
+            return `${elapsed} Text`;
+        },
+
+        async syncAccounts() {
+            this.syncing = true;
+            try {
+                const res = await fetch('/api/wechat/sync', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'}
+                });
+
+                // Text
+                const text = await res.text();
+                if (!text) {
+                    alert('TextFailed: Text');
+                    return;
+                }
+
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    console.error('JSON TextFailed:', text);
+                    alert('TextFailed: Text');
+                    return;
+                }
+
+                if (res.ok) {
+                    alert(`SuccessText ${data.synced_count} Text!`);
+                    await this.loadConfig();
+                    await this.refreshFeed(true); // TextRefresh
+                } else {
+                    alert('TextFailed: ' + (data.error || 'TextError'));
+                }
+            } catch (e) {
+                console.error('TextError:', e);
+                alert('TextFailed: ' + e.message);
+            } finally {
+                this.syncing = false;
+            }
+        },
+
+        async loadConfig() {
+            try {
+                const res = await fetch('/api/wechat/config');
+                const data = await res.json();
+                this.followedAccounts = data.followed_accounts || [];
+                this.weweRssUrl = data.wewe_rss_url || 'http://localhost:4000';
+            } catch (e) {
+                console.error('LoadTextFailed:', e);
+            }
+        },
+
+        async checkHealth() {
+            this.checking = true;
+            try {
+                const res = await fetch('/api/wechat/health', {
+                    cache: 'no-store',
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                // Text 2xx StatusText(Text 401 Text)Text
+                if (!res.ok) {
+                    console.warn('Text 2xx Status:', res.status);
+                    this.serviceHealthy = false;
+                    this.healthChecked = true;
+                    return;
+                }
+
+                const text = await res.text();
+                if (!text || !text.trim().startsWith('{')) {
+                    console.warn('Text JSON Text:', text.slice(0, 100));
+                    this.serviceHealthy = false;
+                    this.healthChecked = true;
+                    return;
+                }
+
+                const data = JSON.parse(text);
+                this.serviceHealthy = data.healthy === true;
+                this.healthChecked = true;
+            } catch (e) {
+                console.error('TextFailed:', e);
+                this.serviceHealthy = false;
+                this.healthChecked = true;
+            } finally {
+                this.checking = false;
+            }
+        },
+
+        async saveConfig() {
+            this.savingConfig = true;
+            try {
+                const res = await fetch('/api/wechat/config', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        wewe_rss_url: this.weweRssUrl
+                    })
+                });
+
+                if (res.ok) {
+                    this.showConfig = false;
+                    await this.checkHealth();
+                    alert('TextSave');
+                } else {
+                    const error = await res.json();
+                    alert('SaveFailed: ' + (error.error || 'TextError'));
+                }
+            } catch (e) {
+                alert('SaveFailed: ' + e.message);
+            } finally {
+                this.savingConfig = false;
+            }
+        },
+
+        async addAccount() {
+            if (!this.newMpId.trim()) {
+                alert('Text ID');
+                return;
+            }
+
+            this.adding = true;
+            try {
+                const res = await fetch('/api/wechat/account/add', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        mp_id: this.newMpId.trim(),
+                        name: this.newName.trim() || this.newMpId.trim()
+                    })
+                });
+
+                if (res.ok) {
+                    this.newMpId = '';
+                    this.newName = '';
+                    await this.loadConfig();
+                    await this.refreshFeed(true); // TextRefresh
+                } else {
+                    const error = await res.json();
+                    alert('TextFailed: ' + (error.error || 'TextError'));
+                }
+            } catch (e) {
+                alert('TextFailed: ' + e.message);
+            } finally {
+                this.adding = false;
+            }
+        },
+
+        async removeAccount(mpId) {
+            const confirmed = window.appConfirm
+                ? await window.appConfirm({
+                    title: 'TextResearchText',
+                    message: 'Text?TextRefreshText. ',
+                    confirmText: 'Text',
+                    tone: 'danger'
+                })
+                : confirm('Text?');
+
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/wechat/account/remove', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({mp_id: mpId})
+                });
+
+                if (res.ok) {
+                    await this.loadConfig();
+                    await this.refreshFeed(true); // TextRefresh
+                } else {
+                    const error = await res.json();
+                    alert('TextFailed: ' + (error.error || 'TextError'));
+                }
+            } catch (e) {
+                alert('TextFailed: ' + e.message);
+            }
+        },
+
+        async refreshFeed(forceRefresh = false) {
+            // TextRefreshText, Text
+            if (!forceRefresh && !this.isCacheExpired() && this.articles.length > 0) {
+                console.log('Text, TextRefresh');
+                return;
+            }
+
+            this.loading = true;
+            try {
+                const res = await fetch('/api/wechat/feed');
+
+                if (res.status === 503) {
+                    const text = await res.text();
+                    const data = text ? JSON.parse(text) : {};
+                    alert(data.error || 'WeWe RSS Text');
+                    this.serviceHealthy = false;
+                    this.healthChecked = true;
+                    return;
+                }
+
+                const text = await res.text();
+                if (!text) {
+                    alert('LoadFailed: Text');
+                    return;
+                }
+
+                const data = JSON.parse(text);
+
+                if (res.ok) {
+                    this.articles = data.articles || [];
+                    this.serviceHealthy = true;
+
+                    // SaveText
+                    this.saveToCache(this.articles);
+                } else {
+                    alert('LoadFailed: ' + (data.error || 'TextError'));
+                }
+            } catch (e) {
+                console.error('LoadFailed:', e);
+                alert('LoadFailed: ' + e.message);
+            } finally {
+                this.loading = false;
+            }
+        },
+
+        async summarizeArticles() {
+            if (this.followedAccounts.length === 0) {
+                alert('Text');
+                return;
+            }
+
+            const days = parseInt(this.summaryDays) || 3;
+            if (days < 1 || days > 30) {
+                alert('Text 1-30 Text');
+                return;
+            }
+
+            const maxArticles = parseInt(this.summaryMaxArticles) || 10;
+            if (maxArticles < 1 || maxArticles > 20) {
+                alert('Text 1-20 Text');
+                return;
+            }
+
+            this.summarizing = true;
+            this.summary = '';
+            this.summaryArticleCount = 0;
+            this.summaryFetchedCount = 0;
+
+            try {
+                const res = await fetch('/api/wechat/summarize', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        days: days,
+                        max_articles: maxArticles
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    this.summary = data.summary || 'TextGenerateText';
+                    this.summaryArticleCount = data.article_count || 0;
+                    this.summaryFetchedCount = data.fetched_count || 0;
+                } else {
+                    alert('GenerateTextFailed: ' + (data.error || 'TextError'));
+                }
+            } catch (e) {
+                alert('GenerateTextFailed: ' + e.message);
+            } finally {
+                this.summarizing = false;
+            }
+        },
+
+        async summarizeInsights() {
+            if (this.followedAccounts.length === 0) {
+                alert('Text');
+                return;
+            }
+
+            const days = parseInt(this.summaryDays) || 3;
+            if (days < 1 || days > 30) {
+                alert('Text 1-30 Text');
+                return;
+            }
+
+            const maxArticles = parseInt(this.summaryMaxArticles) || 15;
+            if (maxArticles < 1 || maxArticles > 20) {
+                alert('Text 1-20 Text');
+                return;
+            }
+
+            this.summarizingInsights = true;
+            this.summary = '';
+            this.summaryArticleCount = 0;
+            this.summaryFetchedCount = 0;
+            this.summarySavedTo = '';
+
+            try {
+                // Text
+                const res = await fetch('/api/wechat/summarize-insights', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        days: days,
+                        max_articles: maxArticles
+                    })
+                });
+
+                const initData = await res.json();
+                if (!res.ok) {
+                    alert('GenerateFailed: ' + (initData.error || 'TextError'));
+                    return;
+                }
+
+                const task_id = initData.task_id;
+
+                // TextStatus(Text 3 Text, Text 5 Text)
+                const taskData = await this.pollTask(task_id, 100, 3000);
+
+                if (taskData.status === 'error') {
+                    alert('GenerateFailed: ' + (taskData.error || 'TextError'));
+                } else {
+                    const data = taskData.result || {};
+                    this.summary = data.summary || 'TextGenerateText';
+                    this.summaryArticleCount = data.article_count || 0;
+                    this.summaryFetchedCount = data.article_count || 0;
+                    this.summarySavedTo = data.saved_to || '';
+
+                    // SaveText(24Text)
+                    this.saveInsightsToCache(
+                        this.summary,
+                        this.summaryArticleCount,
+                        this.summaryFetchedCount,
+                        this.summarySavedTo
+                    );
+
+                    if (this.summarySavedTo) {
+                        setTimeout(() => {
+                            alert('TextGenerateTextSaveText!\nText: ' + this.summarySavedTo);
+                        }, 500);
+                    }
+                }
+            } catch (e) {
+                console.error('GenerateTextFailed:', e);
+                alert('GenerateFailed: ' + e.message);
+            } finally {
+                this.summarizingInsights = false;
+            }
+        },
+
+        async pollTask(taskId, maxAttempts, intervalMs) {
+            for (let i = 0; i < maxAttempts; i++) {
+                await new Promise(r => setTimeout(r, intervalMs));
+                const res = await fetch(`/api/wechat/task/${taskId}`);
+                const data = await res.json();
+                if (data.status === 'done' || data.status === 'error') {
+                    return data;
+                }
+            }
+            throw new Error('Text, TextRefreshTextResult');
+        },
+
+        resetManualArticle() {
+            this.manualArticle = {
+                title: '',
+                date: '',
+                link: '',
+                content: ''
+            };
+        },
+
+        async submitManualArticle() {
+            if (!this.manualArticle.title || !this.manualArticle.content) {
+                alert('Text');
+                return;
+            }
+
+            this.submittingManual = true;
+
+            try {
+                const res = await fetch('/api/wechat/manual-article', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({
+                        title: this.manualArticle.title,
+                        date: this.manualArticle.date || '',
+                        link: this.manualArticle.link || '',
+                        content: this.manualArticle.content
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert('Text!');
+                    this.showManualInput = false;
+                    this.resetManualArticle();
+                    // TextRefreshText
+                    await this.refreshFeed(true);
+                } else {
+                    alert('TextFailed: ' + (data.error || 'TextError'));
+                }
+            } catch (e) {
+                console.error('TextManualTextFailed:', e);
+                alert('TextFailed: ' + e.message);
+            } finally {
+                this.submittingManual = false;
+            }
+        },
+
+        showArticleContent(article) {
+            this.currentArticle = article;
+            this.showArticlePopup = true;
+        },
+
+        async loadInsightsFromCache() {
+            try {
+                const cached = localStorage.getItem(this.insightsCacheKey);
+                console.log('Text localStorage Text:', cached ? 'Text' : 'Text');
+
+                if (cached) {
+                    const data = JSON.parse(cached);
+                    const now = Date.now();
+
+                    // Text(24Text)
+                    if (now - data.timestamp < this.insightsCacheExpiry) {
+                        this.summary = data.summary || '';
+                        this.summaryArticleCount = data.article_count || 0;
+                        this.summaryFetchedCount = data.fetched_count || 0;
+                        this.summarySavedTo = data.saved_to || '';
+                        console.log('Text localStorage LoadText, Text:', this.summary.length);
+                        return;
+                    } else {
+                        // Text
+                        localStorage.removeItem(this.insightsCacheKey);
+                        console.log('Text, Text');
+                    }
+                }
+
+                // localStorage Text, Text
+                console.log('localStorage Text, TextLoad...');
+                await this.loadInsightsFromServer();
+            } catch (e) {
+                console.error('LoadTextFailed:', e);
+            }
+        },
+
+        async loadInsightsFromServer() {
+            try {
+                const res = await fetch('/api/wechat/latest-insights');
+                if (!res.ok) return;
+
+                const data = await res.json();
+                console.log('Text:', {
+                    has_insights: data.has_insights,
+                    summary_length: data.summary ? data.summary.length : 0,
+                    article_count: data.article_count
+                });
+
+                if (data.has_insights) {
+                    this.summary = data.summary || '';
+                    this.summaryArticleCount = data.article_count || 0;
+                    this.summaryFetchedCount = data.article_count || 0;
+                    this.summarySavedTo = data.saved_to || '';
+                    console.log('TextLoadText, Text:', this.summary.length);
+
+                    // TextSaveText localStorage
+                    this.saveInsightsToCache(
+                        this.summary,
+                        this.summaryArticleCount,
+                        this.summaryFetchedCount,
+                        this.summarySavedTo
+                    );
+                }
+            } catch (e) {
+                console.error('TextLoadTextFailed:', e);
+            }
+        },
+
+        saveInsightsToCache(summary, articleCount, fetchedCount, savedTo) {
+            try {
+                const data = {
+                    summary: summary,
+                    article_count: articleCount,
+                    fetched_count: fetchedCount,
+                    saved_to: savedTo,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem(this.insightsCacheKey, JSON.stringify(data));
+                console.log('Text(24Text)');
+            } catch (e) {
+                console.error('SaveTextFailed:', e);
+            }
+        },
+
+        formatTime(dateStr) {
+            if (!dateStr) return '';
+            try {
+                const date = new Date(dateStr);
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+
+                return `${year}-${month}-${day} ${hours}:${minutes}`;
+            } catch (e) {
+                return dateStr;
+            }
+        }
+    }
+}
+</script>
+
+<style>
+[x-cloak] { display: none !important; }
+.line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}K Text{% endblock %}
+
+{% block content %}
+<div
+    id="chart-lab-root"
+    class="space-y-4"
+    data-price-chart-endpoint="/api/price-chart"
+    data-default-ticker="NVDA"
+    data-default-range="1y"
+>
+    <section class="section-card">
+        <div class="section-header">
+            <div>
+                <p class="section-kicker">K Text</p>
+                <h1 class="section-title">CandleView Text</h1>
+                <p class="section-subtitle">
+                    Text CandleView Text /api/price-chart Text, TextTickerText. 
+                </p>
+            </div>
+            <span id="candleview-lab-notice" class="tag-pill">Text</span>
+        </div>
+        <div class="toolbar-group">
+            <label class="control-label" for="chart-lab-ticker">Ticker</label>
+            <input id="chart-lab-ticker" class="control-input max-w-40" value="NVDA" autocomplete="off">
+            <label class="control-label" for="chart-lab-range">Range</label>
+            <select id="chart-lab-range" class="control-select max-w-32">
+                <option value="3m">3M</option>
+                <option value="6m">6M</option>
+                <option value="1y" selected>1Y</option>
+                <option value="2y">2Y</option>
+            </select>
+            <button id="chart-lab-load" class="btn-primary" type="button">Load</button>
+            <span id="chart-lab-status" class="text-sm text-slate-500">TextLoad /api/price-chart</span>
+        </div>
+    </section>
+
+    <section class="desk-sheet overflow-hidden">
+        <div id="chart-lab-candleview" class="min-h-[680px] bg-slate-950"></div>
+    </section>
+</div>
+
+<script src="{{ url_for('static', filename='vendor/candleview-lab/candleview_lab.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pages/chart_lab.js') }}"></script>
+{% endblock %}

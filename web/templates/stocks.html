@@ -1,0 +1,384 @@
+{% extends "base.html" %}
+
+{% block title %}StockText - Investment Assistant{% endblock %}
+
+{% block content %}
+<div x-data="stockKeywordPool()" x-init="init()" class="space-y-5 registry-shell">
+    <section class="hero-band">
+        <div class="page-header">
+            <div>
+                <div class="page-kicker">Text</div>
+                <h1 class="page-title">StockText</h1>
+                <p class="page-subtitle">Text, ResearchText. TextResearchText, Text. </p>
+            </div>
+            <div class="toolbar">
+                <a href="/research-history" class="btn-secondary">ResearchText</a>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-card overflow-hidden registry-toolbar">
+        <div class="section-header">
+            <div class="toolbar-group text-sm text-slate-500 registry-summary-strip">
+                <span class="tag-pill"><span>Text</span><span class="numeric text-slate-900" x-text="counts.total"></span></span>
+                <span class="tag-pill"><span>Text</span><span class="numeric text-slate-900" x-text="counts.withKeywords"></span></span>
+                <span class="tag-pill" :class="counts.withoutKeywords ? 'tag-pill-negative' : ''"><span>Text</span><span class="numeric" x-text="counts.withoutKeywords"></span></span>
+            </div>
+            <div class="toolbar-group registry-filter-bar">
+                <input x-model.trim="filters.search" type="text" class="control-input control-compact control-search" placeholder="SearchStockText / Ticker / Text">
+                <select x-model="filters.source" class="control-select control-compact">
+                    <option value="">Text</option>
+                    <option value="playbook">Playbook</option>
+                    <option value="watchlist">WatchText</option>
+                    <option value="weekly_review">Weekly Review</option>
+                </select>
+                <button
+                    type="button"
+                    @click="filters.onlyMissing = !filters.onlyMissing"
+                    class="btn-secondary control-compact"
+                    :class="filters.onlyMissing ? 'border-amber-300 text-amber-700 bg-amber-50' : ''"
+                    x-text="filters.onlyMissing ? 'Text' : 'Text'"></button>
+            </div>
+        </div>
+
+        <div class="section-body" style="padding:0;">
+            <div x-show="loading" class="loading-state">TextLoadText...</div>
+            <div x-show="flash.text" x-cloak class="alert-banner m-4" :class="flash.type === 'error' ? 'error' : 'info'">
+                <span x-text="flash.text"></span>
+            </div>
+
+            <div x-show="!loading && !filteredItems.length" class="empty-state">
+                <div class="empty-icon">IA</div>
+                <h3 class="text-base font-semibold text-slate-900">CurrentTextStock</h3>
+                <p class="mt-2 text-sm text-slate-500">Text, TextWatchText / Weekly ReviewTextStock. </p>
+            </div>
+
+            <div x-show="!loading && filteredItems.length" class="overflow-x-auto registry-table-shell">
+                <table class="data-table registry-coverage-table">
+                    <thead>
+                        <tr>
+                            <th style="width:16rem;">Stock</th>
+                            <th style="width:10rem;">Text</th>
+                            <th>Text</th>
+                            <th style="width:12rem;">Status</th>
+                            <th style="width:11rem;">Text</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="item in filteredItems" :key="item.pool_key">
+                            <tr :class="item.saving ? 'opacity-80' : ''">
+                                <td style="padding-top:0.7rem;padding-bottom:0.7rem;">
+                                    <div class="text-sm font-semibold text-slate-900 leading-5" x-text="item.stock_name || item.stock_id"></div>
+                                    <div class="mt-1 text-[11px] text-slate-500 numeric" x-text="item.ticker || item.stock_id"></div>
+                                    <div class="mt-1 text-[11px] text-slate-400" x-text="item.updated_at ? ('Text ' + formatDateTime(item.updated_at)) : 'No dataText'"></div>
+                                </td>
+                                <td style="padding-top:0.7rem;padding-bottom:0.7rem;">
+                                    <div class="flex flex-wrap gap-1.5">
+                                        <template x-for="source in item.sources" :key="source">
+                                            <span class="tag-pill text-[11px]" x-text="sourceLabel(source)"></span>
+                                        </template>
+                                    </div>
+                                </td>
+                                <td style="padding-top:0.7rem;padding-bottom:0.7rem;">
+                                    <textarea
+                                        x-model="item.draftKeywordsText"
+                                        class="control-textarea mono"
+                                        style="min-height:3.2rem;padding:0.45rem 0.6rem;font-size:0.78rem;line-height:1.45;"
+                                        placeholder="Text, Text: Text, Text, Text"></textarea>
+                                    <div class="mt-1 text-[11px] text-slate-400" x-text="keywordPreview(item)"></div>
+                                </td>
+                                <td style="padding-top:0.7rem;padding-bottom:0.7rem;">
+                                    <div class="text-[11px] leading-5 text-slate-500" x-text="item.keywords.length ? ('TextSave ' + item.keywords.length + ' Text') : 'TextSaveText'"></div>
+                                    <div x-show="isDirty(item)" class="mt-1 text-[11px] text-amber-700">TextSaveText</div>
+                                </td>
+                                <td style="padding-top:0.7rem;padding-bottom:0.7rem;">
+                                    <div class="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            @click="resetDraft(item)"
+                                            class="btn-secondary"
+                                            style="min-height:2rem;padding:0.4rem 0.65rem;font-size:0.75rem;"
+                                            :disabled="item.saving || !isDirty(item)">Text</button>
+                                        <button
+                                            type="button"
+                                            @click="saveItem(item)"
+                                            class="btn-primary"
+                                            style="min-height:2rem;padding:0.4rem 0.7rem;font-size:0.75rem;"
+                                            :disabled="item.saving || !isDirty(item)">
+                                            <span x-show="!item.saving">Save</span>
+                                            <span x-show="item.saving">SaveText...</span>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+{% if stocks %}
+    <section class="desk-sheet registry-table-shell" x-show="filteredItems.length" x-cloak>
+        <div class="desk-sheet-header toolbar-strip">
+            <div>
+                <div class="desk-caption">TextResearchText</div>
+                <h2 class="desk-heading">TextStock</h2>
+                <p class="desk-copy">CurrentTextResearchTextStock, TextDetailsText. </p>
+            </div>
+            <div class="status-badge status-neutral numeric">{{ stocks|length }} TextStock</div>
+        </div>
+        <div class="desk-sheet-body" style="padding:0;">
+            <div class="overflow-x-auto">
+                <table class="data-table registry-coverage-table">
+                    <thead>
+                        <tr>
+                            <th style="width:14rem;">Stock</th>
+                            <th style="width:9rem;">Ticker</th>
+                            <th>Summary</th>
+                            <th style="width:8rem;">Text</th>
+                            <th style="width:10rem;">Text</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for stock in stocks %}
+                        <tr>
+                            <td>
+                                <div class="text-sm font-semibold text-slate-900">{{ stock.stock_name }}</div>
+                                <div class="mt-1 text-[11px] text-slate-500">{{ stock.stock_id }}</div>
+                            </td>
+                            <td class="numeric text-slate-500">{{ stock.ticker or stock.stock_id }}</td>
+                            <td class="text-sm text-slate-700">{{ stock.core_thesis.summary if stock.core_thesis and stock.core_thesis.summary else 'TextSummary. ' }}</td>
+                            <td class="text-[11px] text-slate-400">{{ stock.updated_at[:10] if stock.updated_at else '--' }}</td>
+                            <td>
+                                <div class="flex items-center gap-2">
+                                    <a href="/stock/{{ stock.stock_id }}" class="btn-secondary" style="min-height:2rem;padding:0.4rem 0.65rem;font-size:0.75rem;">Text</a>
+                                    <button onclick="deleteStock('{{ stock.stock_id }}', '{{ stock.stock_name }}')" class="btn-ghost text-red-600" style="min-height:2rem;padding:0.4rem 0.4rem;font-size:0.75rem;">Text</button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function deleteStock(stockId, stockName) {
+    if (!confirm(`ConfirmText ${stockName}?Text Playbook TextResearchHistory. `)) {
+        return;
+    }
+
+    const response = await fetch(`/api/stock/${stockId}`, {
+        method: 'DELETE'
+    });
+
+    if (response.ok) {
+        window.location.reload();
+    } else {
+        alert('TextFailed');
+    }
+}
+
+function stockKeywordPool() {
+    return {
+        loading: true,
+        items: [],
+        counts: {
+            total: 0,
+            withKeywords: 0,
+            withoutKeywords: 0
+        },
+        filters: {
+            search: '',
+            source: '',
+            onlyMissing: false
+        },
+        flash: {
+            text: '',
+            type: 'info'
+        },
+        flashTimer: null,
+
+        get filteredItems() {
+            const query = (this.filters.search || '').trim().toLowerCase();
+            return this.items.filter((item) => {
+                if (this.filters.source && !(item.sources || []).includes(this.filters.source)) {
+                    return false;
+                }
+                if (this.filters.onlyMissing && (item.keywords || []).length > 0) {
+                    return false;
+                }
+                if (!query) {
+                    return true;
+                }
+                const haystack = [
+                    item.stock_name,
+                    item.stock_id,
+                    item.ticker,
+                    ...(item.sources || []),
+                    ...(item.keywords || [])
+                ]
+                    .filter(Boolean)
+                    .join(' ')
+                    .toLowerCase();
+                return haystack.includes(query);
+            });
+        },
+
+        async init() {
+            await this.loadPool();
+        },
+
+        setFlash(text, type = 'info') {
+            this.flash = { text, type };
+            if (this.flashTimer) {
+                clearTimeout(this.flashTimer);
+            }
+            if (text) {
+                this.flashTimer = setTimeout(() => {
+                    this.flash = { text: '', type: 'info' };
+                    this.flashTimer = null;
+                }, 3000);
+            }
+        },
+
+        sourceLabel(source) {
+            const labels = {
+                playbook: 'Playbook',
+                watchlist: 'WatchText',
+                weekly_review: 'Weekly Review'
+            };
+            return labels[source] || source || '';
+        },
+
+        formatDateTime(value) {
+            if (!value) return '';
+            const dt = new Date(value);
+            if (Number.isNaN(dt.getTime())) {
+                return String(value).slice(0, 16).replace('T', ' ');
+            }
+            return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')} ${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
+        },
+
+        parseKeywords(text) {
+            return Array.from(
+                new Set(
+                    String(text || '')
+                        .split(/[\n,;\uFF0C\uFF1B\u3001]+/)
+                        .map((item) => item.trim())
+                        .filter(Boolean)
+                )
+            );
+        },
+
+        normalizeItem(item) {
+            const keywords = Array.isArray(item.keywords) ? item.keywords.filter(Boolean) : [];
+            return {
+                ...item,
+                sources: Array.isArray(item.sources) ? item.sources : [],
+                keywords,
+                draftKeywordsText: keywords.join('\n'),
+                saving: false
+            };
+        },
+
+        sortItems() {
+            this.items.sort((a, b) => {
+                const aHasKeywords = (a.keywords || []).length > 0 ? 0 : 1;
+                const bHasKeywords = (b.keywords || []).length > 0 ? 0 : 1;
+                if (aHasKeywords !== bHasKeywords) {
+                    return aHasKeywords - bHasKeywords;
+                }
+                const aName = (a.stock_name || a.stock_id || '').toLowerCase();
+                const bName = (b.stock_name || b.stock_id || '').toLowerCase();
+                return aName.localeCompare(bName, 'zh-Hans-CN');
+            });
+        },
+
+        recomputeCounts() {
+            this.counts.total = this.items.length;
+            this.counts.withKeywords = this.items.filter((item) => (item.keywords || []).length > 0).length;
+            this.counts.withoutKeywords = this.counts.total - this.counts.withKeywords;
+        },
+
+        async loadPool() {
+            this.loading = true;
+            try {
+                const response = await fetch('/api/stock-commentary/registry');
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || `TextFailed (${response.status})`);
+                }
+                this.items = (data.items || []).map((item) => this.normalizeItem(item));
+                this.sortItems();
+                this.recomputeCounts();
+            } catch (error) {
+                console.error(error);
+                this.setFlash(`LoadTextFailed: ${error.message || error}`, 'error');
+            }
+            this.loading = false;
+        },
+
+        keywordPreview(item) {
+            const parsed = this.parseKeywords(item.draftKeywordsText);
+            if (!parsed.length) {
+                return 'Text; Text, Text, Text. ';
+            }
+            return `Text ${parsed.length} Text: ${parsed.slice(0, 4).join(' / ')}${parsed.length > 4 ? ' ...' : ''}`;
+        },
+
+        isDirty(item) {
+            const saved = JSON.stringify(item.keywords || []);
+            const draft = JSON.stringify(this.parseKeywords(item.draftKeywordsText));
+            return saved !== draft;
+        },
+
+        resetDraft(item) {
+            item.draftKeywordsText = (item.keywords || []).join('\n');
+        },
+
+        async saveItem(item) {
+            if (item.saving) return;
+            item.saving = true;
+            try {
+                const keywords = this.parseKeywords(item.draftKeywordsText);
+                const response = await fetch(`/api/stock-commentary/registry/${encodeURIComponent(item.stock_id)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        stock_name: item.stock_name || '',
+                        ticker: item.ticker || '',
+                        keywords
+                    })
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || data.error || !data.success) {
+                    throw new Error(data.error || `SaveFailed (${response.status})`);
+                }
+                item.keywords = Array.isArray(data.entry?.keywords) ? data.entry.keywords : keywords;
+                item.draftKeywordsText = item.keywords.join('\n');
+                if (data.entry?.stock_name) {
+                    item.stock_name = data.entry.stock_name;
+                }
+                if (data.entry?.ticker) {
+                    item.ticker = data.entry.ticker;
+                }
+                this.sortItems();
+                this.recomputeCounts();
+                this.setFlash(`TextSave ${item.stock_name || item.stock_id} Text`, 'info');
+            } catch (error) {
+                console.error(error);
+                this.setFlash(`SaveFailed: ${error.message || error}`, 'error');
+            }
+            item.saving = false;
+        }
+    };
+}
+</script>
+{% endblock %}

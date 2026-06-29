@@ -1,0 +1,861 @@
+{% extends "base.html" %}
+
+{% block title %}{{ playbook.stock_name if playbook else 'TextDetails' }} - TextResearchText{% endblock %}
+
+{% block content %}
+<div x-data="stockDetail()" x-init="init()" class="space-y-6">
+    <a href="/stocks" class="inline-flex items-center text-sm text-slate-500 hover:text-slate-800 transition">
+        ← TextStockText
+    </a>
+
+    <div class="page-header dossier-hero">
+        <div class="max-w-4xl">
+            <div class="page-kicker">Text</div>
+            <h1 class="page-title">{{ playbook.stock_name if playbook else 'TextDetails' }}</h1>
+            <p class="page-subtitle">Text, Text, TextResearchHistory, TextResearchTextReviewText. </p>
+            <div class="mt-5 section-card-muted p-4 dossier-kicker-card">
+                <div class="metric-label">Text</div>
+                <p class="mt-3 text-base leading-7 text-slate-900">
+                    {{ playbook.core_thesis.summary if playbook and playbook.core_thesis and playbook.core_thesis.summary else 'CurrentText. ' }}
+                </p>
+            </div>
+            <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="section-card-muted p-4">
+                    <div class="metric-label">StockTicker</div>
+                    <div class="mt-3 flex items-center gap-2 flex-wrap">
+                        <input type="text" x-model="tickerEdit" placeholder="AAPL / 0700.HK / 7203.T / SAMPLE"
+                            class="flex-1 min-w-[200px] control-input control-compact">
+                        <button @click="saveTicker()" :disabled="tickerSaving" class="btn-primary min-w-[96px]">
+                            <span x-show="!tickerSaving">Save</span>
+                            <span x-show="tickerSaving">SaveText...</span>
+                        </button>
+                    </div>
+                    <p class="mt-2 text-xs text-slate-500">TextMarket DataRefresh, Text, Text, AText, Text, TextTicker. </p>
+                </div>
+                <div class="section-card-muted p-4">
+                    <div class="metric-label">NewsSearchText</div>
+                    <div class="mt-3 flex items-center gap-2 flex-wrap">
+                        <input type="text" x-model="searchNameEdit" placeholder="Text(Text, TextSearchText)"
+                            class="flex-1 min-w-[200px] control-input control-compact">
+                        <button @click="saveSearchName()" :disabled="searchNameSaving" class="btn-secondary min-w-[96px]">
+                            <span x-show="!searchNameSaving">Save</span>
+                            <span x-show="searchNameSaving">SaveText...</span>
+                        </button>
+                    </div>
+                    <p class="mt-2 text-xs text-slate-500">TextNewsSearchText. </p>
+                </div>
+            </div>
+        </div>
+        <div class="toolbar">
+            <button @click="editMode = !editMode" class="btn-secondary">
+                <span x-text="editMode ? 'Text' : 'Text Playbook'"></span>
+            </button>
+        </div>
+    </div>
+
+    <section class="summary-strip">
+        <div class="summary-item">
+            <div class="summary-label">ResearchText</div>
+            <div class="summary-value numeric">{{ history|length if history else 0 }}</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">Text</div>
+            <div class="summary-value numeric">{{ playbook.related_entities|length if playbook and playbook.related_entities else 0 }}</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">Text</div>
+            <div class="summary-value numeric">{{ playbook.tracking_metrics|length if playbook and playbook.tracking_metrics else 0 }}</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">TextStatus</div>
+            <div class="summary-value">{{ 'Text' if playbook else 'Text' }}</div>
+        </div>
+    </section>
+
+    <!-- Playbook Text -->
+    <section class="desk-sheet tradingview-market-facts overflow-hidden">
+        <div class="desk-sheet-header">
+            <div>
+                <div class="desk-caption">Text</div>
+                <h2 class="desk-heading">Text</h2>
+                <p class="desk-copy">Text, Text. TextTickerText, K Text, Text, TextStatus, Text. </p>
+            </div>
+        </div>
+        <div class="desk-sheet-body">
+            <div class="grid grid-cols-1 gap-6 xl:grid-cols-12">
+                <div class="xl:col-span-8 space-y-6">
+                    <section class="section-card-muted p-4">
+                        <div class="metric-label">TickerText</div>
+                        <div class="mt-4 rounded-2xl border border-slate-200 bg-white p-2">
+                            <div class="tradingview-widget-container tradingview-widget-symbol-info" style="height: 220px;">
+                                <div class="tradingview-widget-container__widget"></div>
+                                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-symbol-info.js" async>
+                                {
+                                  "symbol": {{ tradingview_symbol|tojson }},
+                                  "width": "100%",
+                                  "locale": "en",
+                                  "colorTheme": "light",
+                                  "isTransparent": true
+                                }
+                                </script>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="section-card-muted p-4">
+                        <div class="metric-label">K Text</div>
+                        <div class="mt-4 rounded-2xl border border-slate-200 bg-white p-2">
+                            <div class="tradingview-widget-container tradingview-widget-kline" style="height: 520px;">
+                                <div class="tradingview-widget-container__widget"></div>
+                                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+                                {
+                                  "symbol": {{ tradingview_symbol|tojson }},
+                                  "interval": "D",
+                                  "timezone": "Etc/UTC",
+                                  "theme": "light",
+                                  "style": "1",
+                                  "locale": "en",
+                                  "enable_publishing": false,
+                                  "allow_symbol_change": false,
+                                  "calendar": false,
+                                  "hide_side_toolbar": true,
+                                  "support_host": "https://www.tradingview.com",
+                                  "width": "100%",
+                                  "height": 500
+                                }
+                                </script>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="section-card-muted p-4">
+                        <div class="metric-label">Text</div>
+                        <div class="mt-4 rounded-2xl border border-slate-200 bg-white p-2">
+                            <div class="tradingview-widget-container tradingview-widget-baseline" style="height: 420px;">
+                                <div class="tradingview-widget-container__widget"></div>
+                                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
+                                {
+                                  "symbol": {{ tradingview_symbol|tojson }},
+                                  "interval": "W",
+                                  "range": "12M",
+                                  "timezone": "Etc/UTC",
+                                  "theme": "light",
+                                  "style": "3",
+                                  "locale": "en",
+                                  "enable_publishing": false,
+                                  "allow_symbol_change": false,
+                                  "calendar": false,
+                                  "hide_side_toolbar": true,
+                                  "support_host": "https://www.tradingview.com",
+                                  "width": "100%",
+                                  "height": 400
+                                }
+                                </script>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="xl:col-span-4 space-y-6">
+                    <section class="section-card-muted p-4">
+                        <div class="metric-label">TextStatus</div>
+                        <div class="mt-4 rounded-2xl border border-slate-200 bg-white p-2">
+                            <div class="tradingview-widget-container tradingview-widget-technical-analysis" style="height: 460px;">
+                                <div class="tradingview-widget-container__widget"></div>
+                                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-technical-analysis.js" async>
+                                {
+                                  "interval": "1D",
+                                  "width": "100%",
+                                  "isTransparent": true,
+                                  "height": 440,
+                                  "symbol": {{ tradingview_symbol|tojson }},
+                                  "showIntervalTabs": true,
+                                  "displayMode": "single",
+                                  "locale": "en",
+                                  "colorTheme": "light"
+                                }
+                                </script>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="section-card-muted p-4">
+                        <div class="metric-label">Text</div>
+                        <div class="mt-4 rounded-2xl border border-slate-200 bg-white p-2">
+                            <div class="tradingview-widget-container tradingview-widget-company-profile" style="height: 260px;">
+                                <div class="tradingview-widget-container__widget"></div>
+                                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-company-profile.js" async>
+                                {
+                                  "width": "100%",
+                                  "height": 240,
+                                  "isTransparent": true,
+                                  "symbol": {{ tradingview_symbol|tojson }},
+                                  "colorTheme": "light",
+                                  "locale": "en"
+                                }
+                                </script>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="section-card-muted p-4">
+                        <div class="metric-label">Text</div>
+                        <div class="mt-4 rounded-2xl border border-slate-200 bg-white p-2">
+                            <div class="tradingview-widget-container tradingview-widget-financials" style="height: 520px;">
+                                <div class="tradingview-widget-container__widget"></div>
+                                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-financials.js" async>
+                                {
+                                  "colorTheme": "light",
+                                  "isTransparent": true,
+                                  "largeChartUrl": "",
+                                  "displayMode": "regular",
+                                  "width": "100%",
+                                  "height": 500,
+                                  "symbol": {{ tradingview_symbol|tojson }},
+                                  "locale": "en"
+                                }
+                                </script>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div x-show="!editMode" class="space-y-6">
+        <div class="desk-grid-8-4">
+            <section class="desk-sheet dossier-sidebar">
+                <div class="desk-sheet-header toolbar-strip">
+                    <div>
+                        <div class="desk-caption">Text</div>
+                        <h2 class="desk-heading">Text</h2>
+                        <p class="desk-copy">Text, TextCurrentResearchText, Text. </p>
+                    </div>
+                    <span class="status-badge status-neutral">Text</span>
+                </div>
+                <div class="desk-sheet-body">
+                    {% if playbook and playbook.core_thesis %}
+                    <div class="surface-panel">
+                        <div class="block-title">Text</div>
+                        <p class="mt-3 text-xl leading-8 text-slate-900">{{ playbook.core_thesis.summary }}</p>
+                    </div>
+
+                    <div class="detail-grid mt-4">
+                        <div class="fact-card">
+                            <div class="block-title">Text</div>
+                            <p class="block-copy mt-2">{{ playbook.core_thesis.market_gap if playbook.core_thesis.market_gap else 'Text. ' }}</p>
+                        </div>
+                        <div class="fact-card">
+                            <div class="block-title">Text</div>
+                            {% if playbook.core_thesis.key_points %}
+                            <div class="list-stack mt-3">
+                                {% for point in playbook.core_thesis.key_points %}
+                                <div class="feed-copy">{{ point }}</div>
+                                {% endfor %}
+                            </div>
+                            {% else %}
+                            <p class="block-copy mt-2">Text. </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="section-card-muted empty-state !py-12">
+                        <div class="empty-icon mono">CASE</div>
+                        <p class="text-sm">CurrentText. </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="desk-sheet">
+                <div class="desk-sheet-header">
+                    <div class="desk-caption">Text</div>
+                    <h2 class="desk-heading">Text</h2>
+                    <p class="desk-copy">Text. </p>
+                </div>
+                <div class="desk-sheet-body">
+                    <div class="surface-panel-muted">
+                        <div class="kv-list">
+                            <div class="kv-row">
+                                <span class="kv-key">StockTicker</span>
+                                <span class="kv-value mono">{{ playbook.ticker if playbook and playbook.ticker else 'Text' }}</span>
+                            </div>
+                            <div class="kv-row">
+                                <span class="kv-key">SearchText</span>
+                                <span class="kv-value">{{ playbook.search_name if playbook and playbook.search_name else 'Text' }}</span>
+                            </div>
+                            <div class="kv-row">
+                                <span class="kv-key">Text</span>
+                                <span class="kv-value">{{ 'Text' if playbook and playbook.operation_plan else 'Text' }}</span>
+                            </div>
+                            <div class="kv-row">
+                                <span class="kv-key">TextStatus</span>
+                                <span class="kv-value">{{ 'Text' if playbook else 'Text' }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <section class="desk-sheet">
+            <div class="desk-sheet-header">
+                <div class="desk-caption">Text</div>
+                <h2 class="desk-heading">Text</h2>
+                <p class="desk-copy">TextReturnText, Text, Text. </p>
+            </div>
+            <div class="desk-sheet-body">
+                <div class="detail-grid">
+                    <div class="fact-card">
+                        <div class="block-title">Text</div>
+                        <p class="block-copy mt-2">{{ playbook.profit_driver if playbook and playbook.profit_driver else 'Text. ' }}</p>
+                    </div>
+                    <div class="fact-card">
+                        <div class="block-title">CurrentText</div>
+                        <p class="block-copy mt-2">{{ playbook.price_contains if playbook and playbook.price_contains else 'Text. ' }}</p>
+                    </div>
+                    <div class="fact-card">
+                        <div class="block-title">Text</div>
+                        <p class="block-copy mt-2">{{ playbook.odds_assessment if playbook and playbook.odds_assessment else 'Text. ' }}</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <section class="desk-sheet">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Text</h2>
+                        <p class="section-description">Text, Text. </p>
+                    </div>
+                </div>
+                <div class="section-body">
+                    {% if playbook and playbook.validation_signals %}
+                    <div class="list-stack">
+                        {% for signal in playbook.validation_signals %}
+                        <div class="list-row">
+                            <div class="feed-copy text-slate-800">{{ signal }}</div>
+                            <span class="status-badge status-positive">Text</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="section-card-muted empty-state !py-10">
+                        <div class="empty-icon mono">VAL</div>
+                        <p class="text-sm">Text. </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="desk-sheet">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Text</h2>
+                        <p class="section-description">Text, Text. </p>
+                    </div>
+                </div>
+                <div class="section-body">
+                    {% if playbook and playbook.invalidation_triggers %}
+                    <div class="list-stack">
+                        {% for trigger in playbook.invalidation_triggers %}
+                        <div class="list-row">
+                            <div class="feed-copy text-slate-800">{{ trigger }}</div>
+                            <span class="status-badge status-negative">Text</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="section-card-muted empty-state !py-10">
+                        <div class="empty-icon mono">RISK</div>
+                        <p class="text-sm">Text. </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+            <section class="desk-sheet xl:col-span-8 timeline-shell">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">ResearchText</h2>
+                        <p class="section-description">TextResearchText, Text, TextReviewTextResearchHistory. </p>
+                    </div>
+                </div>
+                <div class="section-body">
+                    {% if history %}
+                    <div class="timeline">
+                        {% for h in history %}
+                        <div class="timeline-item" x-data="{ isMilestone: {{ 'true' if h.is_milestone else 'false' }} }">
+                            <div class="timeline-date">
+                                <div class="timeline-day">{{ h.date[8:10] if h.date else '--' }}</div>
+                                <div class="timeline-month">{{ h.date[5:7] if h.date else '--' }}Text</div>
+                            </div>
+                            <div class="timeline-content">
+                                <div class="section-card-muted overflow-hidden">
+                                    <div class="px-4 py-4 cursor-pointer hover:bg-slate-50/80"
+                                         @click="expandedHistory = expandedHistory === {{ loop.index }} ? null : {{ loop.index }}">
+                                        <div class="flex items-start justify-between gap-4">
+                                            <div class="space-y-3 min-w-0">
+                                                <div class="toolbar">
+                                                    {% if h.research_result %}
+                                                    <span class="status-badge {% if h.research_result.recommendation in ['Buy', 'Text'] %}status-positive{% elif h.research_result.recommendation in ['Sell', 'Text'] %}status-negative{% else %}status-neutral{% endif %}">
+                                                        {{ h.research_result.recommendation }}
+                                                    </span>
+                                                    <span class="tag-pill">{{ h.research_result.confidence }}</span>
+                                                    {% endif %}
+                                                    <span x-show="isMilestone" class="tag-pill-positive">Text</span>
+                                                    {% if h.user_feedback %}
+                                                    <span class="tag-pill-accent">TextDecision: {{ h.user_feedback.decision }}</span>
+                                                    {% endif %}
+                                                </div>
+                                                <div class="feed-copy text-slate-800">
+                                                    {{ h.research_result.key_finding if h.research_result and h.research_result.key_finding else 'TextResearchText. ' }}
+                                                </div>
+                                            </div>
+                                            <div class="toolbar shrink-0">
+                                                <button @click.stop="
+                                                    fetch('/api/research/{{ stock_id }}/milestone/{{ h.id }}', { method: 'POST' })
+                                                        .then(async (resp) => {
+                                                            if (!resp.ok) {
+                                                                throw new Error(`HTTP ${resp.status}`);
+                                                            }
+                                                            const data = await resp.json().catch(() => ({}));
+                                                            isMilestone = Boolean(data.is_milestone);
+                                                        })
+                                                        .catch((err) => alert(`TextStatusFailed, TextStatusText: ${err?.message || err}`))
+                                                " class="btn-ghost" :class="isMilestone ? 'text-amber-700' : 'text-slate-500'">Text</button>
+                                                <span class="text-slate-400 mono">{{ '▼' if expandedHistory == loop.index else '▶' }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div x-show="expandedHistory === {{ loop.index }}" x-collapse class="border-t border-slate-200 bg-white p-4 space-y-4">
+                                        {% if h.user_feedback %}
+                                        <div class="surface-panel-muted">
+                                            <div class="flex items-center justify-between gap-3">
+                                                <div class="block-title">Text</div>
+                                                <button @click.stop="openRecordFeedback('{{ h.id }}', {{ (h.research_result or {})|tojson }}, {{ (h.user_feedback or {})|tojson }})" class="btn-ghost">Text</button>
+                                            </div>
+                                            <div class="mt-3 space-y-2 text-sm text-slate-700">
+                                                <p><strong>Decision:</strong> {{ h.user_feedback.decision }}</p>
+                                                {% if h.user_feedback.direction_correct %}
+                                                <p><strong>ResearchText:</strong> {{ h.user_feedback.direction_correct }}</p>
+                                                {% endif %}
+                                                {% if h.user_feedback.tracking_metrics %}
+                                                <p><strong>Text:</strong> {{ h.user_feedback.tracking_metrics | join(', ') }}</p>
+                                                {% endif %}
+                                                {% if h.user_feedback.next_direction %}
+                                                <p><strong>Text:</strong> {{ h.user_feedback.next_direction }}</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                        {% endif %}
+
+                                        <div x-show="openRecordFeedbackId === '{{ h.id }}'" class="surface-panel">
+                                            <div class="block-title">TextResearchText</div>
+                                            <div class="form-grid mt-4">
+                                                <div>
+                                                    <label class="field-label">ResearchText</label>
+                                                    <textarea x-model="recordFeedbackForm.feedback_on_research" class="control-textarea compact" rows="2"></textarea>
+                                                </div>
+                                                <div>
+                                                    <label class="field-label">TextDecision</label>
+                                                    <div class="toolbar">
+                                                        <template x-for="opt in ['Buy','Text','Text','Text','Sell']" :key="opt">
+                                                            <button type="button" @click="recordFeedbackForm.final_decision = opt" :class="recordFeedbackForm.final_decision === opt ? 'btn-primary' : 'btn-secondary'" x-text="opt"></button>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label class="field-label">TextResearchText</label>
+                                                    <textarea x-model="recordFeedbackForm.further_research_direction" class="control-textarea compact" rows="2"></textarea>
+                                                </div>
+                                                <div>
+                                                    <label class="field-label">Text</label>
+                                                    <div class="grid grid-cols-[1fr_auto] gap-2">
+                                                        <input type="text" x-model="recordFeedbackNewMetric" @keyup.enter="addRecordFeedbackMetric()" class="control-input" placeholder="Text">
+                                                        <button @click="addRecordFeedbackMetric()" class="btn-secondary">Text</button>
+                                                    </div>
+                                                    <div class="token-list mt-3">
+                                                        <template x-for="(m,i) in recordFeedbackForm.tracking_metrics" :key="i">
+                                                            <span class="tag-pill-accent">
+                                                                <span x-text="m"></span>
+                                                                <button @click="recordFeedbackForm.tracking_metrics.splice(i,1)">×</button>
+                                                            </span>
+                                                        </template>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="toolbar justify-end mt-4">
+                                                <button @click="openRecordFeedbackId = null" class="btn-secondary">Cancel</button>
+                                                <button @click="submitRecordFeedback('{{ stock_id }}', '{{ h.id }}', {{ (h.research_result or {})|tojson }})" :disabled="savingRecordFeedback || !recordFeedbackForm.final_decision" class="btn-primary">SaveText</button>
+                                            </div>
+                                        </div>
+
+                                        {% if not h.user_feedback %}
+                                        <div x-show="openRecordFeedbackId !== '{{ h.id }}'">
+                                            <button @click.stop="openRecordFeedback('{{ h.id }}', {{ (h.research_result or {})|tojson }}, null)" class="btn-secondary">Text</button>
+                                        </div>
+                                        {% endif %}
+
+                                        {% if h.full_report %}
+                                        <div class="surface-panel">
+                                            <div class="block-title">ResearchText</div>
+                                            <div class="prose prose-sm max-w-none text-slate-700 max-h-96 overflow-y-auto mt-4"
+                                                 x-html="marked.parse(`{{ h.full_report|replace('`', '\\`')|replace('\n', '\\n')|replace('\r', '') }}`)"></div>
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="section-card-muted empty-state !py-12">
+                        <div class="empty-icon mono">LOG</div>
+                        <p class="text-sm">No dataResearchHistory. </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <div class="xl:col-span-4 section-stack">
+                <section class="desk-sheet">
+                    <div class="section-header">
+                        <div>
+                            <h2 class="section-title">Text</h2>
+                            <p class="section-description">TextReviewText, ResearchText. </p>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        <div class="space-y-3">
+                            <div class="grid grid-cols-2 gap-2">
+                                <button @click="prefillAlert('price_above')" class="btn-secondary">Price Above</button>
+                                <button @click="prefillAlert('price_below')" class="btn-secondary">Price Below</button>
+                                <button @click="prefillAlert('research_revisit')" class="btn-secondary">Research Revisit</button>
+                                <button @click="prefillAlert('signal_watch')" class="btn-secondary">Signal Watch</button>
+                            </div>
+                            <input type="text" x-model="alertDraft.ticker" class="control-input control-compact" placeholder="Ticker">
+                            <select x-model="alertDraft.alert_type" class="control-select select-compact w-full">
+                                <option value="price_above">price_above</option>
+                                <option value="price_below">price_below</option>
+                                <option value="momentum_revisit">momentum_revisit</option>
+                                <option value="research_revisit">research_revisit</option>
+                                <option value="signal_watch">signal_watch</option>
+                            </select>
+                            <input type="number" step="0.01" x-model="alertDraft.threshold" class="control-input control-compact" placeholder="Threshold">
+                            <textarea x-model="alertDraft.note" class="control-textarea !min-h-[96px]" placeholder="Reminder note"></textarea>
+                            <button @click="createAlert()" :disabled="alertSaving" class="btn-primary w-full justify-center">
+                                <span x-text="alertSaving ? 'SaveText...' : 'Text'"></span>
+                            </button>
+                            <div class="list-stack" x-show="alerts.length">
+                                <template x-for="alert in alerts" :key="alert.id">
+                                    <div class="list-row">
+                                        <div class="min-w-0">
+                                            <div class="feed-copy text-slate-800">
+                                                <span class="mono" x-text="alert.ticker"></span>
+                                                <span class="ml-2 text-xs text-slate-500" x-text="alert.alert_type"></span>
+                                            </div>
+                                            <div class="mt-1 text-xs text-slate-500" x-text="alert.note || 'No note'"></div>
+                                        </div>
+                                        <button @click="deleteAlert(alert.id)" class="btn-secondary">Text</button>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="desk-sheet">
+                    <div class="section-header">
+                        <div>
+                            <h2 class="section-title">Text</h2>
+                            <p class="section-description">Text, Text, Text. </p>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        {% if playbook and playbook.related_entities %}
+                        <div class="token-list">
+                            {% for entity in playbook.related_entities %}
+                            <span class="tag-pill">{{ entity }}</span>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="section-card-muted empty-state !py-8">
+                            <p class="text-sm">Text. </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </section>
+
+                <section class="desk-sheet">
+                    <div class="section-header">
+                        <div>
+                            <h2 class="section-title">Text</h2>
+                            <p class="section-description">Text. </p>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        {% if playbook and playbook.tracking_metrics %}
+                        <div class="list-stack">
+                            {% for metric in playbook.tracking_metrics %}
+                            <div class="list-row">
+                                <div class="feed-copy text-slate-800">{{ metric }}</div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <div class="section-card-muted empty-state !py-8">
+                            <p class="text-sm">Text. </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </section>
+
+                <section class="desk-sheet">
+                    <div class="section-header">
+                        <div>
+                            <h2 class="section-title">Text</h2>
+                            <p class="section-description">Text, Text, TextResearchText. </p>
+                        </div>
+                    </div>
+                    <div class="section-body">
+                        {% if playbook and playbook.operation_plan %}
+                        <div class="surface-panel-muted">
+                            <div class="kv-list">
+                                <div class="kv-row">
+                                    <span class="kv-key">Text</span>
+                                    <span class="kv-value">{{ playbook.operation_plan.holding_period if playbook.operation_plan.holding_period else 'Text' }}</span>
+                                </div>
+                                <div class="kv-row">
+                                    <span class="kv-key">Text</span>
+                                    <span class="kv-value">{{ playbook.operation_plan.position_size if playbook.operation_plan.position_size else 'Text' }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="section-card-muted empty-state !py-8">
+                            <p class="text-sm">Text. </p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="editMode" class="desk-sheet">
+        <div class="desk-sheet-header">
+            <div class="desk-caption">Text</div>
+            <h2 class="desk-heading">Text Playbook</h2>
+            <p class="desk-copy">Text JSON, Text. </p>
+        </div>
+        <div class="desk-sheet-body">
+            <textarea x-model="jsonContent" class="control-textarea mono !min-h-[30rem]"></textarea>
+            <div class="toolbar justify-end mt-4">
+                <button @click="editMode = false" class="btn-secondary">Cancel</button>
+                <button @click="savePlaybook()" class="btn-primary">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function stockDetail() {
+    return {
+        editMode: false,
+        jsonContent: JSON.stringify({{ playbook|tojson|safe if playbook else {} }}, null, 2),
+        expandedHistory: null,
+        stockId: '{{ stock_id }}',
+        tickerEdit: {{ (playbook.ticker if playbook else "")|default("")|tojson }},
+        tickerSaving: false,
+        searchNameEdit: {{ (playbook.search_name if playbook else "")|default("")|tojson }},
+        searchNameSaving: false,
+        alerts: [],
+        alertSaving: false,
+        alertDraft: {
+            ticker: {{ (playbook.ticker if playbook else stock_id)|tojson }},
+            stock_name: {{ (playbook.stock_name if playbook else stock_id)|tojson }},
+            alert_type: 'research_revisit',
+            threshold: '',
+            note: '',
+            source: 'stock_detail',
+        },
+
+        // HistoryText
+        openRecordFeedbackId: null,
+        recordFeedbackForm: { feedback_on_research: '', needs_further_research: 'no', further_research_direction: '', final_decision: 'Text', tracking_metrics: [] },
+        recordFeedbackNewMetric: '',
+        savingRecordFeedback: false,
+
+        async init() {
+            await this.loadAlerts();
+        },
+
+        async loadAlerts() {
+            const response = await fetch('/api/us-screener/alerts');
+            if (!response.ok) {
+                return;
+            }
+            const payload = await response.json();
+            const currentTicker = String(this.alertDraft.ticker || '').trim().toUpperCase();
+            const allAlerts = Array.isArray(payload?.alerts) ? payload.alerts : [];
+            this.alerts = allAlerts.filter((alert) => String(alert?.ticker || '').trim().toUpperCase() === currentTicker);
+        },
+
+        prefillAlert(alertType) {
+            this.alertDraft.alert_type = alertType;
+            if (alertType === 'price_above' || alertType === 'price_below') {
+                this.alertDraft.note = 'Price trigger follow-up';
+            } else if (alertType === 'research_revisit') {
+                this.alertDraft.note = 'Revisit thesis and evidence';
+            } else {
+                this.alertDraft.note = 'Track signal development';
+            }
+        },
+
+        async createAlert() {
+            if (!String(this.alertDraft.ticker || '').trim()) {
+                alert('Text ticker');
+                return;
+            }
+            this.alertSaving = true;
+            try {
+                const response = await fetch('/api/us-screener/alerts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.alertDraft)
+                });
+                const data = await response.json();
+                if (!response.ok || !data?.success) {
+                    throw new Error(data?.error || 'SaveTextFailed');
+                }
+                this.alertDraft.note = '';
+                this.alertDraft.threshold = '';
+                await this.loadAlerts();
+                alert('TextSave');
+            } catch (e) {
+                alert('SaveTextFailed: ' + e.message);
+            }
+            this.alertSaving = false;
+        },
+
+        async deleteAlert(alertId) {
+            try {
+                const response = await fetch(`/api/us-screener/alerts/${encodeURIComponent(alertId)}`, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                if (!response.ok || !data?.success) {
+                    throw new Error(data?.error || 'TextFailed');
+                }
+                await this.loadAlerts();
+            } catch (e) {
+                alert('TextFailed: ' + e.message);
+            }
+        },
+
+        async savePlaybook() {
+            try {
+                const data = JSON.parse(this.jsonContent);
+                const response = await fetch(`/api/stock/${this.stockId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (response.ok) window.location.reload();
+            } catch (e) {
+                alert('JSON TextError: ' + e.message);
+            }
+        },
+
+        async saveTicker() {
+            this.tickerSaving = true;
+            try {
+                const response = await fetch(`/api/stock/${this.stockId}/ticker`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ ticker: this.tickerEdit })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert('StockTickerTextSave');
+                } else {
+                    alert(data.error || 'SaveFailed');
+                }
+            } catch (e) {
+                alert('SaveFailed: ' + e.message);
+            }
+            this.tickerSaving = false;
+        },
+
+        async saveSearchName() {
+            this.searchNameSaving = true;
+            try {
+                const response = await fetch(`/api/stock/${this.stockId}/search-name`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ search_name: this.searchNameEdit })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    alert('SearchTextSave');
+                } else {
+                    alert(data.error || 'SaveFailed');
+                }
+            } catch (e) {
+                alert('SaveFailed: ' + e.message);
+            }
+            this.searchNameSaving = false;
+        },
+
+        openRecordFeedback(recordId, researchResult, existingFeedback) {
+            this.openRecordFeedbackId = recordId;
+            if (existingFeedback) {
+                this.recordFeedbackForm = {
+                    feedback_on_research: existingFeedback.direction_correct || '',
+                    needs_further_research: 'no',
+                    further_research_direction: existingFeedback.next_direction || '',
+                    final_decision: existingFeedback.decision || 'Text',
+                    tracking_metrics: existingFeedback.tracking_metrics || []
+                };
+            } else {
+                this.recordFeedbackForm = { feedback_on_research: '', needs_further_research: 'no', further_research_direction: '', final_decision: 'Text', tracking_metrics: [] };
+            }
+        },
+
+        addRecordFeedbackMetric() {
+            if (this.recordFeedbackNewMetric.trim()) {
+                this.recordFeedbackForm.tracking_metrics.push(this.recordFeedbackNewMetric.trim());
+                this.recordFeedbackNewMetric = '';
+            }
+        },
+
+        async submitRecordFeedback(stockId, recordId, researchResult) {
+            this.savingRecordFeedback = true;
+            try {
+                await fetch(`/api/research/${stockId}/feedback`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        record_id: recordId,
+                        feedback: this.recordFeedbackForm,
+                        research_result: researchResult
+                    })
+                });
+                window.location.reload();
+            } catch (e) {
+                alert('SaveFailed: ' + e.message);
+            }
+            this.savingRecordFeedback = false;
+        }
+    };
+}
+</script>
+{% endblock %}

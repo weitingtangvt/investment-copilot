@@ -1,0 +1,17 @@
+google-genai~=1.0
+openai~=2.21
+anthropic~=0.40
+rich~=13.0
+prompt_toolkit~=3.0
+flask~=3.0
+akshare~=1.12
+feedparser~=6.0
+python-dateutil~=2.8
+beautifulsoup4~=4.9
+requests~=2.25
+scrapling[fetchers]~=0.4
+tavily-python~=0.3.0
+scipy~=1.17
+statsmodels~=0.14
+getfactormodels~=0.0.27
+apscheduler~=3.10

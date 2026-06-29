@@ -1,0 +1,8 @@
+{
+  "llm_provider": "gpt53",
+  "gpt53_api_key": "REDACTED",
+  "gpt53_base_url": "https://api.openai.com/v1",
+  "gpt53_model": "gpt-5.4",
+  "auth_enabled": false,
+  "auth_password_hash": null
+}

@@ -1,0 +1,2538 @@
+{% extends "base.html" %}
+
+{% block title %}WatchText - Investment Assistant{% endblock %}
+
+{% block content %}
+<div x-data="watchlistPage()" x-init="init()" class="space-y-4 watchtower-shell">
+    <section class="hero-band">
+    <div class="page-header">
+        <div>
+            <div class="page-kicker">Text</div>
+            <h1 class="page-title">WatchText</h1>
+        </div>
+        <div class="toolbar flex flex-wrap items-center gap-2">
+            <button @click="batchRefreshNewsAndSummary()"
+                :disabled="loading || batchProcessing || !candidates.length"
+                class="btn-primary">
+                <span x-show="!batchProcessing">TextRefreshNews+GenerateSummary</span>
+                <span x-show="batchProcessing" x-text="'Text ' + batchProgress"></span>
+            </button>
+            <button @click="refreshAllPerformance()"
+                :disabled="loading || refreshingAll || !candidates.length"
+                class="btn-secondary">
+                <span x-show="!refreshingAll">RefreshTextThis WeekText</span>
+                <span x-show="refreshingAll" class="flex items-center">
+                    <svg class="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                    </svg>
+                    RefreshText...
+                </span>
+            </button>
+            <button @click="generateAllAiJudgments()"
+                :disabled="loading || generatingAiAll || !candidates.length"
+                class="btn-secondary">
+                <span x-show="!generatingAiAll">TextGenerate AI Text</span>
+                <span x-show="generatingAiAll">GenerateText...</span>
+            </button>
+            <span class="text-xs text-slate-500" x-show="generatingAiAll">
+                <span x-text="`${aiAllProgress.completed}/${aiAllProgress.total}`"></span>
+                <span>Text</span>
+            </span>
+            <button @click="syncWatchlistToIma(false)"
+                :disabled="loading || syncingIma"
+                class="btn-secondary">
+                <span x-show="!syncingIma">TextThis WeekWatchText IMA</span>
+                <span x-show="syncingIma">Text...</span>
+            </button>
+            <button x-show="canRetryImaSync(imaSync) && !syncingIma"
+                @click="syncWatchlistToIma(true)"
+                class="btn-secondary">
+                Text IMA
+            </button>
+            <button @click="resetFilters()" class="btn-secondary">Text</button>
+        </div>
+    </div>
+
+    <div x-show="flash.text" x-cloak class="alert-banner" :class="flashClass(flash.type)" role="status" aria-live="polite">
+        <span x-text="flash.text"></span>
+    </div>
+    </section>
+
+    <div x-show="imaStatusText(imaSync)" x-cloak class="section-card overflow-hidden">
+        <div class="section-body !py-2.5 !px-3 text-xs"
+            :class="imaToneClass(imaSync)"
+            x-text="imaStatusText(imaSync)"></div>
+    </div>
+    <div class="section-card overflow-hidden watchtower-toolbar">
+        <div class="section-body space-y-4 overflow-x-auto">
+            <div class="summary-strip watchlist-summary-grid">
+                <div class="summary-item">
+                    <div class="summary-label">WatchText</div>
+                    <div class="summary-value numeric" x-text="candidates.length"></div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Text</div>
+                    <div class="summary-value numeric" x-text="themeCount"></div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Text</div>
+                    <div class="summary-value numeric" x-text="watchReasonCount"></div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">TextCurrentText</div>
+                    <div class="summary-value numeric" x-text="notBuyReasonCount"></div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">This WeekText</div>
+                    <div class="summary-value numeric" x-text="weeklyNoteCount"></div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">Text Revisit</div>
+                    <div class="summary-value numeric" :class="revisitSummary.pendingCount ? 'text-red-600' : ''" x-text="revisitSummary.pendingCount"></div>
+                </div>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-3 revisit-banner">
+                <div class="text-xs text-slate-500 numeric"
+                    x-text="`1Text${revisitSummary.weeklyCount} / 1Text${revisitSummary.monthlyCount} / Text${revisitSummary.sinceAddedCount}`"></div>
+                <button type="button"
+                    @click="filters.onlyRevisit = !filters.onlyRevisit"
+                    class="btn-secondary btn-pill"
+                    :class="filters.onlyRevisit ? 'border-blue-300 text-blue-700 bg-blue-50' : ''">
+                    <span x-text="filters.onlyRevisit ? 'Text Revisit' : 'Text Revisit'"></span>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="section-card overflow-hidden watchtower-toolbar">
+        <div class="section-header !py-3">
+            <div>
+                <h2 class="section-title">Text</h2>
+            </div>
+        </div>
+        <div class="section-body !py-4">
+            <SAMPLE class="form-grid" @submit.prevent="addCandidate()">
+                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2.5">
+                    <div class="xl:col-span-2">
+                        <label class="field-label">StockText</label>
+                        <input x-model.trim="addForm.stock_name" type="text" class="control-input control-md" placeholder="Text: Text">
+                    </div>
+                    <div class="xl:col-span-2">
+                        <label class="field-label">StockTicker</label>
+                        <input x-model.trim="addForm.ticker" type="text" class="control-input control-md numeric" placeholder="Text: NVDA / 600519">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-2.5">
+                    <div>
+                        <label class="field-label">TextWatchText</label>
+                        <textarea x-model.trim="addForm.watch_reason"
+                            class="control-textarea textarea-md text-sm"
+                            placeholder="TextStockText?Text, Text, Text?"></textarea>
+                    </div>
+                    <div>
+                        <label class="field-label">Text</label>
+                        <textarea x-model.trim="addForm.not_buy_reason"
+                            class="control-textarea textarea-md text-sm"
+                            placeholder="Text?Text, Text, Text, Text?"></textarea>
+                    </div>
+                    <div>
+                        <label class="field-label">This WeekText</label>
+                        <textarea x-model.trim="addForm.weekly_note"
+                            class="control-textarea textarea-md text-sm"
+                            placeholder="Text?Text, Text, Risk, Text?"></textarea>
+                    </div>
+                </div>
+
+                <div class="rounded-xl border border-slate-200 bg-slate-50/70 px-3 py-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <div class="text-xs font-medium text-slate-600">Text</div>
+                        <button type="button"
+                            @click="addMetaExpanded = !addMetaExpanded"
+                            class="text-xs text-slate-500 hover:text-slate-700">
+                            <span x-text="addMetaExpanded ? 'Text' : 'Text'"></span>
+                        </button>
+                    </div>
+                    <div x-show="addMetaExpanded" x-cloak class="mt-3 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2.5">
+                        <div>
+                            <label class="field-label">Status</label>
+                            <select x-model="addForm.status" class="control-select select-md">
+                                <template x-for="status in statusOptions" :key="status">
+                                    <option :value="status" x-text="status"></option>
+                                </template>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="field-label">TextWatchDate</label>
+                            <input x-model="addForm.watch_started_at" type="date" class="control-input control-md">
+                        </div>
+                        <div>
+                            <label class="field-label">Text</label>
+                            <input x-model.trim="addForm.industry" type="text" class="control-input control-md" placeholder="Text: Text">
+                        </div>
+                        <div>
+                            <label class="field-label">Text / Text</label>
+                            <input x-model.trim="addForm.theme" type="text" class="control-input control-md" placeholder="Text: AI Text">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="toolbar justify-end">
+                    <div class="toolbar-group">
+                        <button type="button" @click="resetAddForm()" class="btn-ghost">Text</button>
+                        <button type="submit" :disabled="creating" class="btn-primary">
+                            <span x-show="!creating">TextWatchText</span>
+                            <span x-show="creating">SaveText...</span>
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="section-card overflow-hidden watchtower-toolbar">
+        <div class="section-header !py-3">
+            <div>
+                <h2 class="section-title">Text</h2>
+            </div>
+        </div>
+        <div class="section-body !py-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-2.5 watchlist-filter-grid">
+                <div class="xl:col-span-2">
+                    <label class="field-label" for="watchlist-search">Search</label>
+                    <input id="watchlist-search" aria-label="SearchWatchText" x-model.trim="filters.search" type="text" class="control-input control-md input-wide" placeholder="SearchText, Ticker, Text, Text, WatchText, Text">
+                </div>
+                <div>
+                    <label class="field-label">Text</label>
+                    <select x-model="filters.groupBy" class="control-select select-md" aria-label="Text">
+                        <option value="theme">Text / Text</option>
+                        <option value="industry">Text</option>
+                        <option value="status">TextStatus</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label">Text</label>
+                    <select x-model="filters.theme" class="control-select select-md" aria-label="Text">
+                        <option value="">Text</option>
+                        <template x-for="theme in themeOptions" :key="theme">
+                            <option :value="theme" x-text="theme"></option>
+                        </template>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label">Text</label>
+                    <select x-model="filters.industry" class="control-select select-md" aria-label="Text">
+                        <option value="">Text</option>
+                        <template x-for="industry in industryOptions" :key="industry">
+                            <option :value="industry" x-text="industry"></option>
+                        </template>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5 mt-2.5">
+                <div>
+                    <label class="field-label">StatusText</label>
+                    <select x-model="filters.status" class="control-select select-md" aria-label="StatusText">
+                        <option value="">TextStatus</option>
+                        <template x-for="status in statusOptions" :key="status">
+                            <option :value="status" x-text="status"></option>
+                        </template>
+                    </select>
+                </div>
+                <div>
+                    <label class="field-label">Text</label>
+                    <select x-model="filters.sortBy" class="control-select select-md" aria-label="Text">
+                        <option value="priority">Text</option>
+                        <option value="change_desc">Text</option>
+                        <option value="updated_desc">Text</option>
+                        <option value="name_asc">Text A-Z</option>
+                    </select>
+                </div>
+                <div class="flex items-end">
+                    <div class="surface-panel-muted w-full !py-3 !px-3">
+                        <div class="metric-label">CurrentResult</div>
+                        <div class="mt-1.5 text-sm font-semibold text-slate-900">
+                            <span class="numeric" x-text="filteredCandidates.length"></span>
+                            <span class="text-sm text-slate-500"> / </span>
+                            <span class="numeric" x-text="candidates.length"></span>
+                            <span class="text-sm text-slate-500"> Text</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-3 flex flex-wrap items-center gap-2">
+                <template x-for="option in quickFilterOptions" :key="option.key">
+                    <button type="button"
+                        class="btn-secondary btn-pill"
+                        :class="filters.quick === option.key ? 'border-blue-300 bg-blue-50 text-blue-700' : ''"
+                        @click="toggleQuickFilter(option.key)">
+                        <span x-text="option.label"></span>
+                        <span class="numeric text-slate-400" x-text="option.count"></span>
+                    </button>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="showLoadingState()" class="section-card">
+        <div class="loading-state">WatchTextLoadText...</div>
+    </div>
+
+    <div x-show="!loading && !filteredCandidates.length" x-cloak class="section-card">
+        <div class="empty-state">
+            <div class="empty-icon">Text</div>
+            <h3 class="text-base font-semibold text-slate-900">TextWatchText</h3>
+            <p class="mt-2 text-sm text-slate-500">
+                TextStock, Text. 
+            </p>
+        </div>
+    </div>
+
+    <section x-show="!loading && filteredCandidates.length"
+        x-cloak
+        class="section-card overflow-hidden watchlist-compact-board"
+        data-testid="watchlist-compact-table">
+        <div class="section-header !py-3">
+            <div>
+                <h2 class="section-title">WatchText</h2>
+                <p class="section-description">
+                    <span class="numeric" x-text="filteredCandidates.length"></span>
+                    <span> Text, TextReviewText. </span>
+                </p>
+            </div>
+            <div class="toolbar-group text-xs text-slate-500">
+                <span x-text="filters.quick ? quickFilterLabel(filters.quick) : 'Text'"></span>
+            </div>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="watchlist-table min-w-full">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Week</th>
+                        <th>Since add</th>
+                        <th>Status</th>
+                        <th>Signals</th>
+                        <th>Working thesis</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <template x-for="candidate in filteredCandidates" :key="candidate.stock_id">
+                        <tr class="watchlist-row"
+                            :class="selectedCandidate?.stock_id === candidate.stock_id ? 'is-selected' : ''"
+                            @click="openCandidateDrawer(candidate)">
+                            <td>
+                                <div class="min-w-[150px]">
+                                    <div class="font-semibold text-slate-900" x-text="candidate.stock_name || candidate.stock_id"></div>
+                                    <div class="mt-0.5 flex items-center gap-2 text-xs text-slate-500">
+                                        <span class="numeric" x-text="candidate.ticker || candidate.stock_id"></span>
+                                        <span x-text="candidate.theme || 'Unclassified'"></span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="numeric font-semibold" :class="changeTextClass(candidate)" x-text="changeBadgeText(candidate)"></span>
+                            </td>
+                            <td>
+                                <span class="numeric font-semibold" :class="sinceAddedTextClass(candidate)" x-text="sinceAddedChangeText(candidate)"></span>
+                            </td>
+                            <td>
+                                <span class="status-badge" :class="statusClass(candidate.status)" x-text="candidate.status || 'WatchText'"></span>
+                            </td>
+                            <td>
+                                <div class="flex min-w-[220px] flex-wrap gap-1.5">
+                                    <span x-show="hasPendingRevisit(candidate)" class="signal-chip signal-chip-alert" x-text="revisitHintText(candidate) || 'Revisit'"></span>
+                                    <span x-show="candidate.filingsPayload?.items?.length" class="signal-chip">Filings <b x-text="candidate.filingsPayload.items.length"></b></span>
+                                    <span x-show="candidate.commentaryItems?.length" class="signal-chip">Text <b x-text="candidate.commentaryItems.length"></b></span>
+                                    <span x-show="candidate.zsxqMatches?.items?.length" class="signal-chip">Text <b x-text="candidate.zsxqMatches.items.length"></b></span>
+                                    <span x-show="isNearBuy(candidate)" class="signal-chip signal-chip-focus">Near buy</span>
+                                    <span x-show="!candidate.filingsPayload?.items?.length && !candidate.commentaryItems?.length && !candidate.zsxqMatches?.items?.length && !hasPendingRevisit(candidate)" class="text-xs text-slate-400">No fresh signal</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="max-w-[420px] truncate text-sm text-slate-700" x-text="candidateOneLine(candidate)"></div>
+                            </td>
+                        </tr>
+                    </template>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <div class="hidden" aria-hidden="true">
+    <template x-for="group in []" :key="group.key">
+        <section class="section-card overflow-hidden candidate-board" x-show="!loading && group.items.length">
+            <div class="section-header !py-3">
+                <div>
+                    <h2 class="section-title" x-text="group.label"></h2>
+                    <p class="section-description">
+                        <span class="numeric" x-text="group.items.length"></span>
+                        <span> Text, </span>
+                        <span class="numeric" x-text="group.positiveCount"></span>
+                        <span> TextThis WeekText, </span>
+                        <span class="numeric" x-text="group.negativeCount"></span>
+                        <span> TextThis WeekText</span>
+                    </p>
+                </div>
+                <div class="toolbar-group text-sm text-slate-500">
+                    <span>Text</span>
+                    <span class="tag-pill-accent" x-text="group.groupTypeLabel"></span>
+                    <span>Text</span>
+                </div>
+            </div>
+
+            <div class="section-body !py-3 !px-4">
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                    <template x-for="candidate in group.items" :key="candidate.stock_id">
+                        <article class="candidate-card border border-slate-200 rounded-xl bg-white px-4 py-3.5 space-y-3"
+                            :class="candidate.isSaving ? 'opacity-80' : ''">
+                            <div class="candidate-card-head flex items-start justify-between gap-3">
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1.5">
+                                        <h3 class="text-base font-semibold text-slate-900 truncate" x-text="candidate.stock_name || candidate.stock_id"></h3>
+                                        <span class="text-sm numeric text-slate-500" x-text="candidate.ticker || candidate.stock_id"></span>
+                                        <button type="button"
+                                            class="watchlist-title-chart-trigger inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold tracking-[0.08em] text-slate-500 transition hover:border-blue-200 hover:bg-blue-50 hover:text-blue-600"
+                                            @click="openPriceChart(candidate)"
+                                            :disabled="priceChartLoading"
+                                            aria-label="Text"
+                                            title="Text">
+                                            1Y
+                                        </button>
+                                        <span class="text-xs text-slate-400" x-text="compactMeta(candidate)"></span>
+                                    </div>
+                                    <div class="mt-1 text-xs text-slate-400" x-text="candidate.prices_updated_at ? ('Text ' + formatDateTime(candidate.prices_updated_at)) : 'TextRefresh'"></div>
+                                    <div x-show="displayedRevisitRules(candidate).length"
+                                        x-cloak
+                                        class="mt-1 flex items-center gap-2 flex-wrap">
+                                        <span class="text-xs font-medium"
+                                            :class="revisitToneClass(candidate)"
+                                            x-text="revisitHintText(candidate)"></span>
+                                        <button type="button"
+                                            x-show="hasPendingRevisit(candidate)"
+                                            @click="ackRevisit(candidate)"
+                                            class="btn-ghost btn-pill-xs"
+                                            :disabled="candidate.ackingRevisit">
+                                            <span x-show="!candidate.ackingRevisit">Text</span>
+                                            <span x-show="candidate.ackingRevisit">Text</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="shrink-0 flex items-center gap-2.5">
+                                    <div class="text-lg font-bold numeric"
+                                        :class="changeTextClass(candidate)"
+                                        x-text="changeBadgeText(candidate)"></div>
+                                    <button @click="refreshCandidatePerformance(candidate)"
+                                        type="button"
+                                        class="btn-secondary btn-pill"
+                                        :disabled="candidate.refreshingPerformance">
+                                        <span x-show="!candidate.refreshingPerformance">Refresh</span>
+                                        <span x-show="candidate.refreshingPerformance">RefreshText</span>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 candidate-metrics-grid">
+                                <div class="rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5">
+                                    <div class="text-xs text-slate-500 font-medium">Text</div>
+                                    <div class="mt-1.5 text-base font-semibold numeric text-slate-800" x-text="priceMetric(candidate, 'baseline_price')"></div>
+                                </div>
+                                <div class="rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5">
+                                    <div class="text-xs text-slate-500 font-medium">Text</div>
+                                    <div class="mt-1.5 text-base font-semibold numeric text-slate-800" x-text="priceMetric(candidate, 'current_price')"></div>
+                                </div>
+                                <div class="rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5">
+                                    <div class="text-xs text-slate-500 font-medium">Text</div>
+                                    <div class="mt-1.5 text-base font-semibold numeric"
+                                        :class="sinceAddedTextClass(candidate)"
+                                        x-text="sinceAddedChangeText(candidate)"></div>
+                                </div>
+                                <div class="rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5">
+                                    <div class="text-xs text-slate-500 font-medium">Status / Date</div>
+                                    <div class="mt-1.5 text-xs text-slate-600 leading-5" x-text="compactStatusLine(candidate)"></div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-1 xl:grid-cols-3 gap-2.5 candidate-note-grid">
+                                <article class="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 h-full flex flex-col">
+                                    <div class="text-xs font-medium text-slate-500">TextWatchText</div>
+                                    <div class="mt-1.5 text-sm text-slate-700 leading-6 whitespace-pre-line flex-1"
+                                        x-show="candidate.watch_reason"
+                                        x-text="candidate.watch_reason"></div>
+                                    <div class="mt-1.5 text-xs text-slate-400" x-show="!candidate.watch_reason">Text</div>
+                                </article>
+                                <article class="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 h-full flex flex-col">
+                                    <div class="text-xs font-medium text-slate-500">Text</div>
+                                    <div class="mt-1.5 text-sm text-slate-700 leading-6 whitespace-pre-line flex-1"
+                                        x-show="candidate.not_buy_reason"
+                                        x-text="candidate.not_buy_reason"></div>
+                                    <div class="mt-1.5 text-xs text-slate-400" x-show="!candidate.not_buy_reason">Text</div>
+                                </article>
+                                <article class="rounded-xl border border-slate-200 bg-slate-50/80 px-3 py-2.5 h-full flex flex-col gap-2">
+                                    <div class="flex items-center justify-between gap-2 flex-wrap">
+                                        <div class="text-xs font-medium text-slate-500">This WeekText</div>
+                                        <div class="flex items-center gap-2 flex-wrap">
+                                            <select
+                                                class="control-select select-compact text-xs"
+                                                x-model="candidate.weeklyNotesState.activeWeekId"
+                                                @change="handleWeeklyNoteWeekChange(candidate)">
+                                                <template x-for="option in weekOptionsForCandidate(candidate)" :key="option">
+                                                    <option :value="option" x-text="formatWeekLabel(option)"></option>
+                                                </template>
+                                            </select>
+                                            <button type="button"
+                                                class="text-xs text-slate-400 hover:text-slate-600"
+                                                @click="resetWeeklyNoteDraft(candidate)">
+                                                Text
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <textarea
+                                        class="control-textarea text-sm min-h-[4.5rem]"
+                                        placeholder="TextThis WeekTextStockText, Text"
+                                        x-model="candidate.weeklyNotesState.drafts[candidate.weeklyNotesState.activeWeekId]"></textarea>
+                                    <div class="flex items-center justify-between gap-2 flex-wrap">
+                                        <div class="text-xs text-slate-400" x-text="weeklyNoteStatusText(candidate)"></div>
+                                        <button type="button"
+                                            class="btn-primary btn-pill"
+                                            :disabled="candidate.weeklyNotesState.saving"
+                                            @click="saveWeeklyNote(candidate)">
+                                            <span x-show="!candidate.weeklyNotesState.saving">Save</span>
+                                            <span x-show="candidate.weeklyNotesState.saving">SaveText...</span>
+                                        </button>
+                                    </div>
+                                    <div class="border-t border-slate-200/80 pt-2">
+                                        <div class="text-xs font-medium text-slate-500 mb-1">HistoryText</div>
+                                        <div class="max-h-28 overflow-y-auto space-y-2"
+                                            x-show="weeklyNotesHistory(candidate).length">
+                                            <template x-for="entry in weeklyNotesHistory(candidate)" :key="entry.week_id">
+                                                <article class="rounded-lg border border-slate-200 bg-white/70 px-2.5 py-1.5">
+                                                    <div class="flex items-center justify-between text-[11px] text-slate-400">
+                                                        <span x-text="formatWeekLabel(entry.week_id)"></span>
+                                                        <span x-text="entry.updated_at ? formatDateTime(entry.updated_at) : ''"></span>
+                                                    </div>
+                                                    <div class="mt-1 text-xs text-slate-700 whitespace-pre-wrap leading-5"
+                                                        x-text="entry.content || '(Text)'"></div>
+                                                </article>
+                                            </template>
+                                        </div>
+                                        <div class="text-xs text-slate-400" x-show="!weeklyNotesHistory(candidate).length">No dataHistoryText</div>
+                                    </div>
+                                </article>
+                            </div>
+
+                            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2.5 candidate-meta-grid">
+                                <div class="rounded-lg border border-slate-200 bg-white/70 px-3 py-2.5">
+                                    <div class="text-xs font-medium text-slate-500">Text</div>
+                                    <div class="mt-1 text-sm text-slate-800" x-text="candidate.theme || 'Text'"></div>
+                                </div>
+                                <div class="rounded-lg border border-slate-200 bg-white/70 px-3 py-2.5">
+                                    <div class="text-xs font-medium text-slate-500">Text</div>
+                                    <div class="mt-1 text-sm text-slate-800" x-text="candidate.industry || 'Text'"></div>
+                                </div>
+                                <div class="rounded-lg border border-slate-200 bg-white/70 px-3 py-2.5">
+                                    <div class="text-xs font-medium text-slate-500">Status</div>
+                                    <div class="mt-1 text-sm text-slate-800" x-text="candidate.status || 'WatchText'"></div>
+                                </div>
+                                <div class="rounded-lg border border-slate-200 bg-white/70 px-3 py-2.5">
+                                    <div class="text-xs font-medium text-slate-500">TextDate</div>
+                                    <div class="mt-1 text-sm text-slate-800"
+                                        x-text="candidate.watch_started_at ? formatDate(candidate.watch_started_at) : 'Text'"></div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-1.5 watchlist-zsxq-block">
+                                <div class="flex items-center justify-between gap-2">
+                                    <label class="field-label text-xs mb-0">Text7TextCommunityText</label>
+                                    <span class="text-xs text-slate-400" x-text="zsxqStatusText(candidate)"></span>
+                                </div>
+                                <div class="rounded-lg border border-slate-200 bg-white/80 px-2.5 py-2">
+                                    <div x-show="candidate.zsxqLoading" class="text-xs text-slate-400">Text7TextCommunity...</div>
+                                    <div x-show="!candidate.zsxqLoading && candidate.zsxqError" class="text-xs text-red-500" x-text="candidate.zsxqError"></div>
+                                    <div x-show="!candidate.zsxqLoading && !candidate.zsxqError && !candidate.zsxqMatches.items.length" class="text-xs text-slate-400">Text7TextNo dataText</div>
+                                    <div x-show="!candidate.zsxqLoading && candidate.zsxqMatches.items.length" class="space-y-2 watchlist-zsxq-list">
+                                        <div class="flex flex-wrap gap-1 text-[11px] text-slate-500" x-show="candidate.zsxqMatches.keywords_used?.length">
+                                            <span class="rounded-full bg-slate-100 px-2 py-0.5">Text</span>
+                                            <span class="break-all" x-text="candidate.zsxqMatches.keywords_used.join(' / ')"></span>
+                                        </div>
+                                        <template x-for="item in candidate.zsxqMatches.items.slice(0, 3)" :key="item.id">
+                                            <article class="rounded-lg border border-slate-200/80 bg-slate-50/70 px-2 py-2">
+                                                <div class="flex items-start justify-between gap-2 text-[11px] text-slate-400">
+                                                    <span class="min-w-0 flex-1 truncate" x-text="zsxqMeta(item)"></span>
+                                                    <span class="shrink-0" x-show="item.matched_keywords?.length" x-text="item.matched_keywords.join(' / ')"></span>
+                                                </div>
+                                                <div class="mt-1 text-xs font-medium leading-5 text-slate-700 break-words"
+                                                    x-text="item.header_lines?.[0] || item.preview || item.snippet || '--'"></div>
+                                                <div class="mt-1 text-xs leading-5 text-slate-500 break-words line-clamp-3"
+                                                    x-text="item.snippet || item.preview || item.body || ''"></div>
+                                            </article>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <div class="flex items-center justify-between gap-2">
+                                    <label class="field-label text-xs mb-0">TextFilings</label>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs text-slate-400"
+                                            x-text="filingsStatusText(candidate)"></span>
+                                        <button type="button"
+                                            class="text-xs text-blue-600 hover:text-blue-700"
+                                            @click="candidate.filingsLoading = true; candidate.filingsError = ''; requestJson(`/api/watchlist/${encodeURIComponent(candidate.stock_id)}/filings/refresh`).then(payload => applyFilingsPayload(candidate, payload)).catch(error => { console.error(error); candidate.filingsLoading = false; candidate.filingsError = error.message || 'FilingsLoadFailed'; });">
+                                            Refresh
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="rounded-lg border border-slate-200 bg-slate-50/80 h-32 overflow-y-auto px-2.5 py-2">
+                                    <div x-show="candidate.filingsLoading" class="text-xs text-slate-400">TextLoadTextFilings...</div>
+                                    <div x-show="!candidate.filingsLoading && candidate.filingsError" class="text-xs text-red-500" x-text="candidate.filingsError"></div>
+                                    <div x-show="!candidate.filingsLoading && !candidate.filingsError && !candidate.filingsPayload.items.length" class="text-xs text-slate-400">TextNo dataTextFilings</div>
+                                    <div x-show="!candidate.filingsLoading && candidate.filingsPayload.items.length" class="space-y-2">
+                                        <template x-for="item in candidate.filingsPayload.items.slice(0, 3)" :key="`${item.filed_at}-${item.doc_type}-${item.title}`">
+                                            <article class="border-b border-slate-200/80 pb-2 last:border-b-0 last:pb-0">
+                                                <div class="flex items-center justify-between gap-2 text-xs text-slate-400">
+                                                    <span class="truncate" x-text="`${item.filed_at || '--'} · ${item.doc_type || '--'}`"></span>
+                                                    <span class="shrink-0 rounded-full px-2 py-0.5"
+                                                        :class="item.importance === 'high' ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-500'"
+                                                        x-text="item.importance || 'low'"></span>
+                                                </div>
+                                                <div class="mt-1 text-xs font-medium text-slate-700 leading-5 break-words" x-text="item.title || '--'"></div>
+                                                <div class="mt-1 text-xs text-slate-500 leading-5 break-words" x-text="item.summary || ''"></div>
+                                            </article>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <div class="flex items-center justify-between gap-2">
+                                    <label class="field-label text-xs mb-0">This WeekText</label>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs text-slate-400"
+                                            x-text="commentaryStatusText(candidate)"></span>
+                                        <button type="button"
+                                            x-show="!candidate.commentaryLoading && candidate.commentaryItems.length"
+                                            class="text-xs text-blue-600 hover:text-blue-700"
+                                            @click="openCommentaryModal(candidate.stock_name || candidate.stock_id, candidate.ticker || candidate.stock_id, candidate.commentaryItems)">
+                                            Text
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="rounded-lg border border-slate-200 bg-slate-50/80 h-36 overflow-y-auto px-2.5 py-2">
+                                    <div x-show="candidate.commentaryLoading" class="text-xs text-slate-400">TextThis WeekText...</div>
+                                    <div x-show="!candidate.commentaryLoading && candidate.commentaryError" class="text-xs text-red-500" x-text="candidate.commentaryError"></div>
+                                    <div x-show="!candidate.commentaryLoading && !candidate.commentaryError && !candidate.commentaryItems.length" class="text-xs text-slate-400">This WeekNo dataText</div>
+                                    <div x-show="!candidate.commentaryLoading && candidate.commentaryItems.length" class="space-y-2">
+                                        <template x-for="item in candidate.commentaryItems" :key="item.id">
+                                            <article class="border-b border-slate-200/80 pb-2 last:border-b-0 last:pb-0">
+                                                <div class="flex items-center justify-between gap-2 text-xs text-slate-400">
+                                                    <span class="truncate" x-text="commentaryMeta(item)"></span>
+                                                    <button type="button"
+                                                        class="text-slate-500 hover:text-slate-700"
+                                                        @click="item.expanded = !item.expanded"
+                                                        x-text="item.expanded ? 'Text' : 'Text'"></button>
+                                                </div>
+                                                <div class="mt-1 text-xs font-medium text-slate-700 leading-5" x-text="item.header_lines?.[0] || '--'"></div>
+                                                <div class="mt-1 text-xs text-slate-400"
+                                                    x-show="item.matched_keywords?.length"
+                                                    x-text="'Text: ' + (item.matched_keywords || []).join(' / ')"></div>
+                                                <div class="mt-1 text-xs text-slate-500 leading-5"
+                                                    x-show="!item.expanded"
+                                                    x-text="item.preview || item.body || ''"></div>
+                                                <div class="mt-1 text-xs text-slate-600 whitespace-pre-wrap leading-5"
+                                                    x-show="item.expanded"
+                                                    x-text="item.body || item.preview || ''"></div>
+                                            </article>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-1.5">
+                                <div class="flex items-center justify-between gap-2">
+                                    <label class="field-label text-xs mb-0">AI Text</label>
+                                    <button type="button"
+                                        @click="generateCandidateAiJudgment(candidate, true)"
+                                        class="btn-secondary btn-pill-sm"
+                                        :disabled="candidate.aiJudging">
+                                        <span x-show="!candidate.aiJudging" x-text="candidate.ai_watch_judgment ? 'Refresh AI' : 'AI Text'"></span>
+                                        <span x-show="candidate.aiJudging">GenerateText</span>
+                                    </button>
+                                </div>
+                                <div class="rounded-lg border border-slate-200 bg-slate-50/80 px-2.5 py-2">
+                                    <div x-show="candidate.ai_watch_judgment_generated_at" class="text-xs text-slate-400"
+                                        x-text="'Text ' + formatDateTime(candidate.ai_watch_judgment_generated_at)"></div>
+                                    <div x-show="candidate.ai_watch_judgment_error" class="mt-1 text-xs text-red-500" x-text="candidate.ai_watch_judgment_error"></div>
+                                    <div x-show="candidate.ai_watch_judgment" class="longform mt-1 whitespace-pre-wrap text-xs leading-5 text-slate-700" x-text="candidate.ai_watch_judgment"></div>
+                                    <div x-show="!candidate.ai_watch_judgment && !candidate.ai_watch_judgment_error" class="text-xs text-slate-400">
+                                        TextGenerate AI Text
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between gap-2 flex-wrap">
+                                <div class="text-xs text-slate-400">
+                                    <span>Text: </span>
+                                    <span x-text="formatDateTime(candidate.updated_at)"></span>
+                                </div>
+                                <div class="flex items-center gap-1.5 flex-wrap">
+                                    <button type="button"
+                                        @click="deleteCandidate(candidate)"
+                                        class="btn-danger btn-pill"
+                                        :disabled="candidate.isSaving || candidate.refreshingPerformance">
+                                        Text
+                                    </button>
+                                </div>
+                            </div>
+                        </article>
+                    </template>
+                </div>
+            </div>
+        </section>
+    </template>
+    </div>
+
+    <div x-show="selectedCandidate"
+        x-cloak
+        data-testid="watchlist-detail-drawer"
+        @keydown.escape.window="closeCandidateDrawer()"
+        class="fixed inset-0 z-40">
+        <div class="absolute inset-0 bg-slate-950/20" @click="closeCandidateDrawer()"></div>
+        <template x-if="selectedCandidate">
+        <aside class="watchlist-drawer absolute right-0 top-0 flex h-full w-full max-w-3xl flex-col border-l border-slate-200 bg-white shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Watchlist detail drawer">
+            <div class="border-b border-slate-200 px-5 py-4">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <h2 class="truncate text-lg font-semibold text-slate-950" x-text="selectedCandidate?.stock_name || selectedCandidate?.stock_id || ''"></h2>
+                            <span class="numeric text-sm text-slate-500" x-text="selectedCandidate?.ticker || selectedCandidate?.stock_id || ''"></span>
+                            <span class="status-badge" :class="statusClass(selectedCandidate?.status)" x-text="selectedCandidate?.status || 'WatchText'"></span>
+                        </div>
+                        <div class="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+                            <span x-text="selectedCandidate?.theme || 'No theme'"></span>
+                            <span x-text="selectedCandidate?.industry || 'No industry'"></span>
+                            <span x-text="selectedCandidate?.watch_started_at ? ('Added ' + formatDate(selectedCandidate.watch_started_at)) : 'No start date'"></span>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-secondary btn-pill" @click="closeCandidateDrawer()">Close</button>
+                </div>
+                <div class="mt-4 grid grid-cols-3 gap-2">
+                    <div class="drawer-metric">
+                        <div class="drawer-metric-label">Week</div>
+                        <div class="drawer-metric-value numeric" :class="changeTextClass(selectedCandidate)" x-text="changeBadgeText(selectedCandidate)"></div>
+                    </div>
+                    <div class="drawer-metric">
+                        <div class="drawer-metric-label">Since add</div>
+                        <div class="drawer-metric-value numeric" :class="sinceAddedTextClass(selectedCandidate)" x-text="sinceAddedChangeText(selectedCandidate)"></div>
+                    </div>
+                    <div class="drawer-metric">
+                        <div class="drawer-metric-label">Revisit</div>
+                        <div class="drawer-metric-value text-sm" :class="revisitToneClass(selectedCandidate)" x-text="revisitHintText(selectedCandidate) || 'None'"></div>
+                    </div>
+                </div>
+                <div class="mt-4 flex flex-wrap gap-1.5">
+                    <template x-for="tab in drawerTabs" :key="tab.key">
+                        <button type="button"
+                            class="drawer-tab"
+                            :class="drawerTab === tab.key ? 'is-active' : ''"
+                            @click="drawerTab = tab.key">
+                            <span x-text="tab.label"></span>
+                        </button>
+                    </template>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto px-5 py-4">
+                <div x-show="drawerTab === 'decision'" class="space-y-3">
+                    <section class="drawer-section">
+                        <div class="drawer-section-title">TextWatchText</div>
+                        <p class="drawer-copy" x-text="selectedCandidate?.watch_reason || 'Text. '"></p>
+                    </section>
+                    <section class="drawer-section">
+                        <div class="drawer-section-title">Text</div>
+                        <p class="drawer-copy" x-text="selectedCandidate?.not_buy_reason || 'Text. '"></p>
+                    </section>
+                    <section class="drawer-section">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="drawer-section-title">AI Text</div>
+                            <button type="button" class="btn-secondary btn-pill-sm"
+                                :disabled="selectedCandidate?.aiJudging"
+                                @click="generateCandidateAiJudgment(selectedCandidate, true)">
+                                <span x-show="!selectedCandidate?.aiJudging" x-text="selectedCandidate?.ai_watch_judgment ? 'Refresh AI' : 'AI Text'"></span>
+                                <span x-show="selectedCandidate?.aiJudging">GenerateText</span>
+                            </button>
+                        </div>
+                        <p class="drawer-copy whitespace-pre-wrap" x-text="selectedCandidate?.ai_watch_judgment || selectedCandidate?.ai_watch_judgment_error || 'TextGenerate AI Text. '"></p>
+                    </section>
+                </div>
+
+                <div x-show="drawerTab === 'updates'" class="space-y-3">
+                    <section class="drawer-section">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="drawer-section-title">This WeekText</div>
+                            <button type="button" class="btn-primary btn-pill"
+                                :disabled="selectedCandidate?.weeklyNotesState?.saving"
+                                @click="saveWeeklyNote(selectedCandidate)">
+                                Save
+                            </button>
+                        </div>
+                        <textarea class="control-textarea mt-2 min-h-[7rem] text-sm"
+                            x-model="selectedCandidate.weeklyNotesState.drafts[selectedCandidate.weeklyNotesState.activeWeekId]"></textarea>
+                        <div class="mt-2 text-xs text-slate-400" x-text="weeklyNoteStatusText(selectedCandidate)"></div>
+                    </section>
+                    <section class="drawer-section">
+                        <div class="drawer-section-title">Text Revisit</div>
+                        <div class="grid grid-cols-2 gap-2 text-sm">
+                            <div>Text <b class="numeric" x-text="priceMetric(selectedCandidate, 'baseline_price')"></b></div>
+                            <div>Text <b class="numeric" x-text="priceMetric(selectedCandidate, 'current_price')"></b></div>
+                        </div>
+                        <div class="mt-2 flex flex-wrap gap-1.5">
+                            <template x-for="rule in displayedRevisitRules(selectedCandidate)" :key="rule.window + rule.direction">
+                                <span class="signal-chip signal-chip-alert" x-text="`${rule.label} ${rule.change_pct >= 0 ? '+' : ''}${Number(rule.change_pct).toFixed(1)}%`"></span>
+                            </template>
+                        </div>
+                    </section>
+                </div>
+
+                <div x-show="drawerTab === 'flow'" class="space-y-3">
+                    <section class="drawer-section">
+                        <div class="drawer-section-title">Filings</div>
+                        <template x-for="item in (selectedCandidate?.filingsPayload?.items || []).slice(0, 5)" :key="`${item.filed_at}-${item.doc_type}-${item.title}`">
+                            <article class="drawer-feed-item">
+                                <div class="drawer-feed-meta" x-text="`${item.filed_at || '--'} · ${item.doc_type || '--'} · ${item.importance || 'low'}`"></div>
+                                <div class="drawer-feed-title" x-text="item.title || '--'"></div>
+                                <div class="drawer-feed-copy" x-text="item.summary || ''"></div>
+                            </article>
+                        </template>
+                        <div x-show="!(selectedCandidate?.filingsPayload?.items || []).length" class="text-sm text-slate-400">TextNo dataTextFilings. </div>
+                    </section>
+                    <section class="drawer-section">
+                        <div class="drawer-section-title">Community</div>
+                        <template x-for="item in (selectedCandidate?.zsxqMatches?.items || []).slice(0, 5)" :key="item.id">
+                            <article class="drawer-feed-item">
+                                <div class="drawer-feed-meta" x-text="zsxqMeta(item)"></div>
+                                <div class="drawer-feed-title" x-text="item.header_lines?.[0] || item.preview || item.snippet || '--'"></div>
+                                <div class="drawer-feed-copy" x-text="item.snippet || item.preview || ''"></div>
+                            </article>
+                        </template>
+                        <div x-show="!(selectedCandidate?.zsxqMatches?.items || []).length" class="text-sm text-slate-400">Text 7 TextNo dataText. </div>
+                    </section>
+                    <section class="drawer-section">
+                        <div class="drawer-section-title">Text</div>
+                        <template x-for="item in (selectedCandidate?.commentaryItems || []).slice(0, 5)" :key="item.id">
+                            <article class="drawer-feed-item">
+                                <div class="drawer-feed-meta" x-text="commentaryMeta(item)"></div>
+                                <div class="drawer-feed-title" x-text="item.header_lines?.[0] || '--'"></div>
+                                <div class="drawer-feed-copy" x-text="item.preview || item.body || ''"></div>
+                            </article>
+                        </template>
+                        <div x-show="!(selectedCandidate?.commentaryItems || []).length" class="text-sm text-slate-400">This WeekNo dataText. </div>
+                    </section>
+                </div>
+
+                <div x-show="drawerTab === 'history'" class="space-y-3">
+                    <section class="drawer-section">
+                        <div class="drawer-section-title">History weekly notes</div>
+                        <template x-for="entry in weeklyNotesHistory(selectedCandidate)" :key="entry.week_id">
+                            <article class="drawer-feed-item">
+                                <div class="drawer-feed-meta">
+                                    <span x-text="formatWeekLabel(entry.week_id)"></span>
+                                    <span x-text="entry.updated_at ? ' · ' + formatDateTime(entry.updated_at) : ''"></span>
+                                </div>
+                                <div class="drawer-feed-copy whitespace-pre-wrap" x-text="entry.content || '(Text)'"></div>
+                            </article>
+                        </template>
+                        <div x-show="!weeklyNotesHistory(selectedCandidate).length" class="text-sm text-slate-400">No dataHistoryText. </div>
+                    </section>
+                </div>
+            </div>
+
+            <div class="border-t border-slate-200 px-5 py-3">
+                <div class="flex items-center justify-between gap-2">
+                    <button type="button" class="btn-secondary btn-pill" @click="openPriceChart(selectedCandidate)">1Y chart</button>
+                    <button type="button" class="btn-danger btn-pill" @click="deleteCandidate(selectedCandidate); closeCandidateDrawer()">Text</button>
+                </div>
+            </div>
+        </aside>
+        </template>
+    </div>
+
+    <div x-show="commentaryModalOpen"
+        x-cloak
+        @keydown.escape.window="closeCommentaryModal()"
+        x-transition.opacity
+        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4 py-6">
+        <div class="absolute inset-0" @click="closeCommentaryModal()"></div>
+        <section class="relative w-full max-w-5xl h-[72vh] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="commentary-modal-title"
+            x-ref="commentaryModalRoot"
+            @keydown="trapFocus($event, 'commentaryModalRoot')">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4">
+                <div class="min-w-0">
+                    <div id="commentary-modal-title" class="text-base font-semibold text-slate-900" x-text="commentaryModalTitle || 'Text'"></div>
+                    <div class="mt-1 text-xs text-slate-400" x-text="commentaryModalSubtitle || ''"></div>
+                </div>
+                <button type="button"
+                    class="btn-secondary btn-pill"
+                    @click="closeCommentaryModal()"
+                    x-ref="commentaryModalClose">
+                    Text
+                </button>
+            </div>
+            <div class="h-[calc(72vh-73px)] overflow-y-auto px-5 py-4">
+                <div x-show="!commentaryModalItems.length" class="text-sm text-slate-400">No dataText. </div>
+                <div x-show="commentaryModalItems.length" class="space-y-4">
+                    <template x-for="item in commentaryModalItems" :key="item.id">
+                        <article class="rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3">
+                            <div class="flex items-center justify-between gap-2 text-xs text-slate-400">
+                                <span x-text="commentaryMeta(item)"></span>
+                            </div>
+                            <div class="mt-2 text-sm font-semibold leading-6 text-slate-900" x-text="item.header_lines?.[0] || '--'"></div>
+                            <div class="mt-1 text-xs text-slate-500"
+                                x-show="item.matched_keywords?.length"
+                                x-text="'Text: ' + (item.matched_keywords || []).join(' / ')"></div>
+                            <div class="mt-3 whitespace-pre-wrap text-[13px] leading-6 text-slate-700" x-text="item.body || item.preview || ''"></div>
+                        </article>
+                    </template>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div x-show="priceChartModalOpen"
+        x-cloak
+        x-transition.opacity
+        @keydown.escape.window="closePriceChartModal()"
+        class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/55 px-4 py-6 backdrop-blur-[1px]">
+        <div class="absolute inset-0" @click="closePriceChartModal()"></div>
+        <section class="relative w-full max-w-[1180px] h-[76vh] overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,rgba(248,250,252,0.98),rgba(255,255,255,0.96))] shadow-[0_30px_80px_rgba(15,23,42,0.24)]"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="watchlist-price-chart-title"
+            x-ref="priceChartModalRoot"
+            @keydown="trapFocus($event, 'priceChartModalRoot')">
+            <div class="flex items-start justify-between gap-4 border-b border-slate-200/90 bg-white/70 px-5 py-4 backdrop-blur">
+                <div class="min-w-0">
+                    <div id="watchlist-price-chart-title" class="text-base font-semibold text-slate-900" x-text="priceChartTitle()"></div>
+                    <div class="mt-1 text-xs text-slate-400" x-text="priceChartSubtitle()"></div>
+                </div>
+                <button type="button"
+                    class="btn-secondary btn-pill"
+                    @click="closePriceChartModal()"
+                    x-ref="priceChartModalClose">
+                    Text
+                </button>
+            </div>
+            <div class="h-[calc(76vh-73px)] overflow-y-auto px-5 py-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-2.5">
+                    <div class="rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5">
+                        <div class="text-xs text-slate-400">Text</div>
+                        <div class="mt-1 text-sm font-semibold numeric text-slate-800" x-text="priceChartMetric(priceChartData?.meta?.latest_close ?? priceChartStock?.latest_close)"></div>
+                    </div>
+                    <div class="rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5">
+                        <div class="text-xs text-slate-400">Text</div>
+                        <div class="mt-1 text-sm font-semibold numeric text-slate-800" x-text="priceChartMetric(priceChartStock?.revisit_metrics?.baseline_price)"></div>
+                    </div>
+                    <div class="rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5">
+                        <div class="text-xs text-slate-400">Text</div>
+                        <div class="mt-1 text-sm font-semibold numeric"
+                            :class="priceChartSignedClass(priceChartStock?.revisit_metrics?.since_added_change_pct)"
+                            x-text="priceChartSignedPercent(priceChartStock?.revisit_metrics?.since_added_change_pct)"></div>
+                    </div>
+                    <div class="rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5">
+                        <div class="text-xs text-slate-400">Text 1 Text</div>
+                        <div class="mt-1 text-sm font-semibold numeric"
+                            :class="priceChartSignedClass(priceChartData?.meta?.change_1y_pct)"
+                            x-text="priceChartSignedPercent(priceChartData?.meta?.change_1y_pct)"></div>
+                    </div>
+                </div>
+
+                <div class="tv-chart-shell">
+                    <div class="tv-chart-topbar">
+                        <div class="flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1">
+                            <span class="text-sm font-semibold text-slate-800">KText</span>
+                            <span class="tv-ohlc-item">O <b x-text="priceChartHover?.open ?? '--'"></b></span>
+                            <span class="tv-ohlc-item">H <b x-text="priceChartHover?.high ?? '--'"></b></span>
+                            <span class="tv-ohlc-item">L <b x-text="priceChartHover?.low ?? '--'"></b></span>
+                            <span class="tv-ohlc-item">C <b x-text="priceChartHover?.close ?? '--'"></b></span>
+                            <span class="tv-ohlc-item" :class="priceChartSignedClass(priceChartHover?.dayChange)" x-text="priceChartHover?.dayChangeText || ''"></span>
+                        </div>
+                        <div class="text-xs text-slate-400" x-text="priceChartMetaLine()"></div>
+                    </div>
+                    <div x-show="priceChartLoading" class="py-12 text-center text-sm text-slate-500">TextLoadText...</div>
+                    <div x-show="!priceChartLoading && priceChartError" class="py-12 text-center text-sm text-red-500" x-text="priceChartError"></div>
+                    <div x-show="!priceChartLoading && !priceChartError && !priceChartHasData()" class="py-12 text-center text-sm text-slate-400">No dataText</div>
+                    <div x-show="!priceChartLoading && !priceChartError && priceChartHasData()" class="mt-3">
+                        <div x-show="priceChartNeedsHistoryHint()" class="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs text-amber-700">HistoryText, MA200 Text</div>
+                        <div class="tv-chart-panel">
+                            <div class="tv-chart-legend">
+                                <span><i style="background:#26a69a"></i>Candles</span>
+                                <span><i style="background:#2962ff"></i>MA50</span>
+                                <span><i style="background:#b7791f"></i>MA100</span>
+                                <span><i style="background:#089981"></i>MA200</span>
+                                <span><i style="background:#1d4ed8"></i>Text</span>
+                            </div>
+                            <div id="watchlistPriceChartContainer" class="h-[520px] w-full"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/lightweight-charts@5/dist/lightweight-charts.standalone.production.js"></script>
+<script>
+window.WATCHLIST_CURRENT_WEEK_ID = "{{ week_id }}";
+window.WATCHLIST_WEEK_OPTIONS = {{ week_options|tojson }};
+</script>
+<script>
+function watchlistPage() {
+    const today = new Date().toISOString().slice(0, 10);
+
+    return {
+        loading: true,
+        creating: false,
+        refreshingAll: false,
+        generatingAiAll: false,
+        syncingIma: false,
+        batchProcessing: false,
+        batchProgress: '',
+        aiAllProgress: { total: 0, completed: 0, failed: 0 },
+        candidates: [],
+        flash: { type: '', text: '' },
+        imaSync: {},
+        addMetaExpanded: false,
+        commentaryModalOpen: false,
+        commentaryModalTitle: '',
+        commentaryModalSubtitle: '',
+        commentaryModalItems: [],
+        bodyOverflowBeforeModal: '',
+        modalReturnFocusEl: null,
+        priceChartModalOpen: false,
+        priceChartLoading: false,
+        priceChartError: '',
+        priceChartStock: null,
+        priceChartData: null,
+        priceChartHover: null,
+        priceChartCache: {},
+        priceChartChart: null,
+          priceChartRange: '1y',
+          priceChartCacheVersion: 'v4',
+        priceChartBodyOverflowBeforeModal: '',
+        selectedCandidate: null,
+        drawerTab: 'decision',
+        drawerTabs: [
+            { key: 'decision', label: 'Text' },
+            { key: 'updates', label: 'This WeekText' },
+            { key: 'flow', label: 'Text' },
+            { key: 'history', label: 'History' },
+        ],
+        statusOptions: ['WatchText', 'Text', 'Text', 'Text', 'Text'],
+        currentWeekId: window.WATCHLIST_CURRENT_WEEK_ID || '',
+        weekOptions: Array.isArray(window.WATCHLIST_WEEK_OPTIONS) && window.WATCHLIST_WEEK_OPTIONS.length
+            ? window.WATCHLIST_WEEK_OPTIONS
+            : (window.WATCHLIST_CURRENT_WEEK_ID ? [window.WATCHLIST_CURRENT_WEEK_ID] : []),
+        weeklyNotesHistoryLimit: 6,
+        addForm: {
+            stock_name: '',
+            ticker: '',
+            industry: '',
+            theme: '',
+            status: 'WatchText',
+            watch_reason: '',
+            not_buy_reason: '',
+            weekly_note: '',
+            watch_started_at: today
+        },
+        filters: {
+            search: '',
+            theme: '',
+            industry: '',
+            status: '',
+            groupBy: 'theme',
+            sortBy: 'priority',
+            onlyRevisit: false,
+            quick: ''
+        },
+
+        async init() {
+            await this.loadWatchlist();
+        },
+
+        showLoadingState() {
+            return this.loading && !this.candidates.length;
+        },
+
+        get themeOptions() {
+            return [...new Set(this.candidates.map(item => (item.theme || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+        },
+
+        get industryOptions() {
+            return [...new Set(this.candidates.map(item => (item.industry || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'zh-CN'));
+        },
+
+        get themeCount() {
+            return this.themeOptions.length || 0;
+        },
+
+        get watchReasonCount() {
+            return this.candidates.filter(item => (item.watch_reason || '').trim()).length;
+        },
+
+        get notBuyReasonCount() {
+            return this.candidates.filter(item => (item.not_buy_reason || '').trim()).length;
+        },
+
+        get weeklyNoteCount() {
+            return this.candidates.filter(item => (this.getWeeklyNote(item, this.currentWeekId) || '').trim()).length;
+        },
+
+        get revisitSummary() {
+            const pending = this.candidates.filter(item => this.hasPendingRevisit(item));
+            return {
+                pendingCount: pending.length,
+                weeklyCount: pending.filter(item => this.revisitRules(item).some(rule => rule.window === 'weekly')).length,
+                monthlyCount: pending.filter(item => this.revisitRules(item).some(rule => rule.window === 'monthly')).length,
+                sinceAddedCount: pending.filter(item => this.revisitRules(item).some(rule => rule.window === 'since_added')).length,
+            };
+        },
+
+        get quickFilterOptions() {
+            return [
+                { key: 'onlyRevisit', label: 'Text Revisit', count: this.candidates.filter(item => this.hasPendingRevisit(item)).length },
+                { key: 'hasFreshInfo', label: 'This WeekText', count: this.candidates.filter(item => this.hasFreshInfo(item)).length },
+                { key: 'gainers', label: 'Text', count: this.candidates.filter(item => (this.changePct(item) || 0) > 0).length },
+                { key: 'losers', label: 'Text', count: this.candidates.filter(item => (this.changePct(item) || 0) < 0).length },
+                { key: 'nearBuy', label: 'Text', count: this.candidates.filter(item => this.isNearBuy(item)).length },
+            ];
+        },
+
+        get filteredCandidates() {
+            const keyword = (this.filters.search || '').trim().toLowerCase();
+            const byTheme = (this.filters.theme || '').trim();
+            const byIndustry = (this.filters.industry || '').trim();
+            const byStatus = (this.filters.status || '').trim();
+            const onlyRevisit = !!this.filters.onlyRevisit;
+            const quick = this.filters.quick || '';
+
+            const result = this.candidates.filter(item => {
+                if (byTheme && (item.theme || '') !== byTheme) return false;
+                if (byIndustry && (item.industry || '') !== byIndustry) return false;
+                if (byStatus && (item.status || '') !== byStatus) return false;
+                if (onlyRevisit && !this.hasPendingRevisit(item)) return false;
+                if (quick === 'onlyRevisit' && !this.hasPendingRevisit(item)) return false;
+                if (quick === 'hasFreshInfo' && !this.hasFreshInfo(item)) return false;
+                if (quick === 'gainers' && !((this.changePct(item) || 0) > 0)) return false;
+                if (quick === 'losers' && !((this.changePct(item) || 0) < 0)) return false;
+                if (quick === 'nearBuy' && !this.isNearBuy(item)) return false;
+                if (!keyword) return true;
+
+                const haystack = [
+                    item.stock_name,
+                    item.stock_id,
+                    item.ticker,
+                    item.theme,
+                    item.industry,
+                    item.watch_reason,
+                    item.not_buy_reason,
+                    item.weekly_note,
+                    item.ai_watch_judgment,
+                    this.revisitHintText(item),
+                    ...(item.filingsPayload?.items || []).map(entry => `${entry.title || ''} ${entry.summary || ''} ${entry.doc_type || ''}`),
+                    ...(item.commentaryItems || []).map(entry => `${entry.header_lines?.join(' ') || ''} ${entry.preview || ''}`),
+                    ...(item.zsxqMatches?.items || []).map(entry => `${entry.header_lines?.join(' ') || ''} ${entry.snippet || entry.preview || ''}`)
+                ].join(' ').toLowerCase();
+
+                return haystack.includes(keyword);
+            });
+
+            return result.sort((a, b) => this.compareCandidates(a, b));
+        },
+
+        get groupedCandidates() {
+            const keyName = this.filters.groupBy || 'theme';
+            const labelMap = {
+                theme: 'Text / Text',
+                industry: 'Text',
+                status: 'Status'
+            };
+
+            const groups = new Map();
+            for (const item of this.filteredCandidates) {
+                const raw = (item[keyName] || '').trim();
+                const label = raw || 'Text';
+                if (!groups.has(label)) {
+                    groups.set(label, []);
+                }
+                groups.get(label).push(item);
+            }
+
+            return Array.from(groups.entries())
+                .sort((a, b) => a[0].localeCompare(b[0], 'zh-CN'))
+                .map(([label, items]) => ({
+                    key: `${keyName}:${label}`,
+                    label,
+                    items,
+                    positiveCount: items.filter(item => (this.changePct(item) || 0) > 0).length,
+                    negativeCount: items.filter(item => (this.changePct(item) || 0) < 0).length,
+                    groupTypeLabel: labelMap[keyName]
+                }));
+        },
+
+        normalizeCandidate(candidate) {
+            const normalized = {
+                ...candidate,
+                isSaving: false,
+                refreshingPerformance: false,
+                aiJudging: false,
+                ackingRevisit: false,
+                commentaryLoading: false,
+                commentaryError: '',
+                commentaryMatchCount: 0,
+                commentaryKeywords: [],
+                commentaryItems: [],
+                filingsLoading: false,
+                filingsError: '',
+                filingsPayload: {
+                    items: [],
+                    counts: { total: 0, high_importance: 0 },
+                    window: {},
+                    cache: {}
+                },
+                zsxqLoading: false,
+                zsxqError: '',
+                zsxqMatches: {
+                    keywords_used: [],
+                    match_count: 0,
+                    header_match_count: 0,
+                    body_match_count: 0,
+                    source_group_count: 0,
+                    items: [],
+                    window: {}
+                }
+            };
+            this.applyWeeklyNotesState(normalized);
+            return normalized;
+        },
+
+        syncCandidate(candidate, source) {
+            const commentaryLoading = !!candidate.commentaryLoading;
+            const commentaryError = candidate.commentaryError || '';
+            const commentaryMatchCount = Number(candidate.commentaryMatchCount || 0);
+            const commentaryKeywords = Array.isArray(candidate.commentaryKeywords) ? [...candidate.commentaryKeywords] : [];
+            const commentaryItems = Array.isArray(candidate.commentaryItems) ? [...candidate.commentaryItems] : [];
+            const filingsLoading = !!candidate.filingsLoading;
+            const filingsError = candidate.filingsError || '';
+            const filingsPayload = candidate.filingsPayload && typeof candidate.filingsPayload === 'object'
+                ? {
+                    ...candidate.filingsPayload,
+                    items: Array.isArray(candidate.filingsPayload.items) ? [...candidate.filingsPayload.items] : [],
+                    counts: { ...(candidate.filingsPayload.counts || {}) },
+                    window: { ...(candidate.filingsPayload.window || {}) },
+                    cache: { ...(candidate.filingsPayload.cache || {}) }
+                }
+                : {
+                    items: [],
+                    counts: { total: 0, high_importance: 0 },
+                    window: {},
+                    cache: {}
+                };
+            const zsxqLoading = !!candidate.zsxqLoading;
+            const zsxqError = candidate.zsxqError || '';
+            const zsxqMatches = candidate.zsxqMatches && typeof candidate.zsxqMatches === 'object'
+                ? {
+                    ...candidate.zsxqMatches,
+                    keywords_used: Array.isArray(candidate.zsxqMatches.keywords_used) ? [...candidate.zsxqMatches.keywords_used] : [],
+                    items: Array.isArray(candidate.zsxqMatches.items) ? [...candidate.zsxqMatches.items] : [],
+                }
+                : {
+                    keywords_used: [],
+                    match_count: 0,
+                    header_match_count: 0,
+                    body_match_count: 0,
+                    source_group_count: 0,
+                    items: [],
+                    window: {}
+                };
+            Object.assign(candidate, source, {
+                aiJudging: !!candidate.aiJudging,
+                commentaryLoading,
+                commentaryError,
+                commentaryMatchCount,
+                commentaryKeywords,
+                commentaryItems,
+                filingsLoading,
+                filingsError,
+                filingsPayload,
+                zsxqLoading,
+                zsxqError,
+                zsxqMatches
+            });
+            this.applyWeeklyNotesState(candidate);
+        },
+
+        normalizeWeeklyNotes(rawNotes, legacyNote, fallbackUpdatedAt) {
+            const notes = {};
+            if (rawNotes && typeof rawNotes === 'object') {
+                Object.entries(rawNotes).forEach(([weekId, value]) => {
+                    const key = String(weekId || '').trim();
+                    if (!key) return;
+                    const entry = typeof value === 'string' ? { content: value } : (value || {});
+                    notes[key] = {
+                        content: String(entry.content || '').trim(),
+                        updated_at: entry.updated_at || fallbackUpdatedAt || '',
+                    };
+                });
+            }
+            if (!Object.keys(notes).length && legacyNote) {
+                const fallbackWeek = this.currentWeekId || this.weekOptions[0] || 'legacy';
+                notes[fallbackWeek] = {
+                    content: legacyNote,
+                    updated_at: fallbackUpdatedAt || '',
+                };
+            }
+            return notes;
+        },
+
+        applyWeeklyNotesState(candidate) {
+            const notes = this.normalizeWeeklyNotes(candidate.weekly_notes, candidate.weekly_note, candidate.updated_at);
+            candidate.weeklyNotes = notes;
+            const drafts = { ...(candidate.weeklyNotesState?.drafts || {}) };
+            Object.entries(notes).forEach(([weekId, entry]) => {
+                drafts[weekId] = entry.content || drafts[weekId] || '';
+            });
+            const defaultWeek = this.currentWeekId || this.weekOptions[0] || Object.keys(notes)[0] || '';
+            const activeWeekId = candidate.weeklyNotesState?.activeWeekId || defaultWeek;
+            if (activeWeekId && !(activeWeekId in drafts)) {
+                drafts[activeWeekId] = candidate.weeklyNotes?.[activeWeekId]?.content || '';
+            }
+            candidate.weeklyNotesState = {
+                activeWeekId,
+                drafts,
+                saving: false,
+            };
+        },
+
+        handleWeeklyNoteWeekChange(candidate) {
+            const weekId = candidate.weeklyNotesState?.activeWeekId || this.currentWeekId;
+            if (!weekId) return;
+            if (!(weekId in candidate.weeklyNotesState.drafts)) {
+                candidate.weeklyNotesState.drafts[weekId] = candidate.weeklyNotes?.[weekId]?.content || '';
+            }
+        },
+
+        weekOptionsForCandidate(candidate) {
+            const set = new Set(this.weekOptions);
+            Object.keys(candidate.weeklyNotes || {}).forEach(key => set.add(key));
+            return Array.from(set).sort((a, b) => b.localeCompare(a));
+        },
+
+        weeklyNotesHistory(candidate) {
+            return Object.entries(candidate.weeklyNotes || {})
+                .map(([week_id, entry]) => ({
+                    week_id,
+                    content: entry?.content || '',
+                    updated_at: entry?.updated_at || '',
+                }))
+                .sort((a, b) => b.week_id.localeCompare(a.week_id))
+                .slice(0, this.weeklyNotesHistoryLimit);
+        },
+
+        getWeeklyNote(candidate, weekId) {
+            if (!weekId) return (candidate.weekly_note || '').trim();
+            return (candidate.weeklyNotes?.[weekId]?.content || '').trim();
+        },
+
+        formatWeekLabel(weekId) {
+            if (!weekId) return 'Text';
+            const match = weekId.match(/(\d{4})-W(\d{2})/);
+            if (!match) return weekId;
+            const year = match[1];
+            const week = parseInt(match[2], 10);
+            return `${year}Text${week}Text`;
+        },
+
+        weeklyNoteStatusText(candidate) {
+            const weekId = candidate.weeklyNotesState?.activeWeekId || this.currentWeekId;
+            const entry = candidate.weeklyNotes?.[weekId];
+            if (entry?.updated_at) {
+                return `Text ${this.formatDateTime(entry.updated_at)}`;
+            }
+            return 'TextSave';
+        },
+
+        resetWeeklyNoteDraft(candidate) {
+            const weekId = candidate.weeklyNotesState?.activeWeekId || this.currentWeekId;
+            if (!weekId) return;
+            candidate.weeklyNotesState.drafts[weekId] = '';
+        },
+
+        async saveWeeklyNote(candidate) {
+            const weekId = candidate.weeklyNotesState?.activeWeekId || this.currentWeekId;
+            if (!weekId) {
+                this.setFlash('Text', 'warn');
+                return;
+            }
+            const content = candidate.weeklyNotesState.drafts?.[weekId] || '';
+            candidate.weeklyNotesState.saving = true;
+            try {
+                const data = await this.requestJson(`/api/watchlist/${encodeURIComponent(candidate.stock_id)}/weekly-notes`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ week_id: weekId, content })
+                });
+                if (data.candidate) {
+                    this.syncCandidate(candidate, data.candidate);
+                }
+                const message = content.trim()
+                    ? `${candidate.stock_name || candidate.stock_id} Text ${this.formatWeekLabel(weekId)} TextSave. `
+                    : `${candidate.stock_name || candidate.stock_id} Text ${this.formatWeekLabel(weekId)} Text. `;
+                this.setFlash(message, 'info');
+            } catch (error) {
+                console.error(error);
+                this.setFlash(`SaveThis WeekTextFailed: ${error.message || error}`, 'error');
+            }
+            candidate.weeklyNotesState.saving = false;
+        },
+
+        compareCandidates(a, b) {
+            const mode = this.filters.sortBy || 'change_desc';
+            if (mode === 'priority') {
+                const priorityDiff = this.candidatePriorityScore(b) - this.candidatePriorityScore(a);
+                if (priorityDiff !== 0) return priorityDiff;
+            }
+            if (mode === 'updated_desc') {
+                return String(b.updated_at || '').localeCompare(String(a.updated_at || ''));
+            }
+            if (mode === 'name_asc') {
+                return String(a.stock_name || a.stock_id || '').localeCompare(String(b.stock_name || b.stock_id || ''), 'zh-CN');
+            }
+            const aValue = this.changePct(a);
+            const bValue = this.changePct(b);
+            if (aValue === null && bValue !== null) return 1;
+            if (aValue !== null && bValue === null) return -1;
+            if (aValue !== null && bValue !== null && bValue !== aValue) return bValue - aValue;
+            return String(a.stock_name || a.stock_id || '').localeCompare(String(b.stock_name || b.stock_id || ''), 'zh-CN');
+        },
+
+        candidatePriorityScore(candidate) {
+            let score = 0;
+            if (this.hasPendingRevisit(candidate)) score += 100;
+            if (this.isNearBuy(candidate)) score += 45;
+            if (this.hasFreshInfo(candidate)) score += 30;
+            if ((this.getWeeklyNote(candidate, this.currentWeekId) || '').trim()) score += 12;
+            score += Math.min(Math.abs(this.changePct(candidate) || 0), 20);
+            return score;
+        },
+
+        hasFreshInfo(candidate) {
+            return !!(
+                (candidate?.filingsPayload?.items || []).length ||
+                (candidate?.commentaryItems || []).length ||
+                (candidate?.zsxqMatches?.items || []).length ||
+                (candidate?.ai_watch_judgment || '').trim() ||
+                (this.getWeeklyNote(candidate, this.currentWeekId) || '').trim()
+            );
+        },
+
+        isNearBuy(candidate) {
+            const text = [
+                candidate?.status,
+                candidate?.ai_watch_judgment,
+                candidate?.watch_reason,
+                candidate?.not_buy_reason,
+                this.revisitHintText(candidate),
+            ].join(' ').toLowerCase();
+            return /Text|Text|Text|Text|near buy|buy/.test(text);
+        },
+
+        candidateOneLine(candidate) {
+            return (candidate?.not_buy_reason || candidate?.watch_reason || candidate?.ai_watch_judgment || 'No thesis note yet').trim();
+        },
+
+        quickFilterLabel(key) {
+            return (this.quickFilterOptions.find(item => item.key === key) || {}).label || 'All signals';
+        },
+
+        toggleQuickFilter(key) {
+            this.filters.quick = this.filters.quick === key ? '' : key;
+            if (key === 'onlyRevisit') {
+                this.filters.onlyRevisit = this.filters.quick === key;
+            } else if (this.filters.onlyRevisit && this.filters.quick) {
+                this.filters.onlyRevisit = false;
+            }
+        },
+
+        openCandidateDrawer(candidate) {
+            this.selectedCandidate = candidate;
+            this.drawerTab = 'decision';
+        },
+
+        closeCandidateDrawer() {
+            this.selectedCandidate = null;
+        },
+
+        changePct(candidate) {
+            const value = candidate?.performance_data?.change_pct;
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : null;
+        },
+
+        changeBadgeText(candidate) {
+            const value = this.changePct(candidate);
+            if (value === null) return 'TextRefresh';
+            return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+        },
+
+        changeBadgeClass(candidate) {
+            const value = this.changePct(candidate);
+            if (value === null) return 'status-neutral';
+            if (value > 0) return 'status-positive';
+            if (value < 0) return 'status-negative';
+            return 'status-warning';
+        },
+
+        changeTextClass(candidate) {
+            const value = this.changePct(candidate);
+            if (value === null) return 'text-slate-400';
+            if (value > 0) return 'text-green-600';
+            if (value < 0) return 'text-red-600';
+            return 'text-slate-500';
+        },
+
+        compactMeta(candidate) {
+            const pieces = [
+                candidate.status || 'WatchText',
+                candidate.theme || 'Text',
+                candidate.industry || 'Text',
+                candidate.watch_started_at ? ('Text ' + this.formatDate(candidate.watch_started_at)) : ''
+            ].filter(Boolean);
+            return pieces.join(' · ');
+        },
+
+        compactStatusLine(candidate) {
+            const pieces = [
+                candidate.status || 'WatchText',
+                candidate.watch_started_at ? ('Text ' + this.formatDate(candidate.watch_started_at)) : '',
+                candidate.theme || '',
+            ].filter(Boolean);
+            return pieces.join(' · ');
+        },
+
+        priceMetric(candidate, key) {
+            const value = Number(candidate?.revisit_metrics?.[key]);
+            return Number.isFinite(value) ? value.toFixed(2) : 'No data';
+        },
+
+        sinceAddedChangeValue(candidate) {
+            const value = Number(candidate?.revisit_metrics?.since_added_change_pct);
+            return Number.isFinite(value) ? value : null;
+        },
+
+        sinceAddedChangeText(candidate) {
+            const value = this.sinceAddedChangeValue(candidate);
+            if (value === null) return 'No data';
+            return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+        },
+
+        sinceAddedTextClass(candidate) {
+            const value = this.sinceAddedChangeValue(candidate);
+            if (value === null) return 'text-slate-400';
+            if (value > 0) return 'text-green-600';
+            if (value < 0) return 'text-red-600';
+            return 'text-slate-500';
+        },
+
+        revisitRules(candidate) {
+            return Array.isArray(candidate?.revisit_active_rules) ? candidate.revisit_active_rules : [];
+        },
+
+        isRevisitAcknowledged(candidate) {
+            const signature = String(candidate?.revisit_signature || '');
+            const ackSignature = String(candidate?.revisit_ack_signature || '');
+            return !!signature && signature === ackSignature;
+        },
+
+        hasPendingRevisit(candidate) {
+            return this.revisitRules(candidate).length > 0 && !this.isRevisitAcknowledged(candidate);
+        },
+
+        displayedRevisitRules(candidate) {
+            return this.revisitRules(candidate)
+                .slice()
+                .sort((a, b) => (a.priority ?? 9) - (b.priority ?? 9))
+                .slice(0, 2);
+        },
+
+        revisitToneClass(candidate) {
+            const rules = this.displayedRevisitRules(candidate);
+            if (!rules.length) return 'text-slate-400';
+            if (this.isRevisitAcknowledged(candidate)) return 'text-slate-400';
+            if (rules.some(rule => rule.direction === 'down')) return 'text-red-600';
+            return 'text-amber-600';
+        },
+
+        revisitHintText(candidate) {
+            const rules = this.displayedRevisitRules(candidate);
+            if (!rules.length) return '';
+            const prefix = this.isRevisitAcknowledged(candidate) ? 'Text' : 'Revisit';
+            const pieces = rules.map(rule => `${rule.label} ${rule.change_pct >= 0 ? '+' : ''}${Number(rule.change_pct).toFixed(1)}%`);
+            return [prefix, ...pieces].join(' · ');
+        },
+
+        statusClass(status) {
+            if (status === 'Text') return 'status-positive';
+            if (status === 'Text') return 'status-negative';
+            if (status === 'Text' || status === 'Text') return 'status-warning';
+            return 'status-neutral';
+        },
+
+        flashClass(type) {
+            if (type === 'error') return 'error';
+            if (type === 'warn') return 'warn';
+            return 'info';
+        },
+
+        imaToneClass(sync) {
+            const status = String(sync?.status || '');
+            if (['synced', 'already_synced', 'already_exists'].includes(status)) return 'text-green-700';
+            if (status === 'not_configured') return 'text-amber-700';
+            if (status === 'failed') return 'text-red-600';
+            return 'text-slate-500';
+        },
+
+        imaStatusText(sync) {
+            const status = String(sync?.status || '');
+            if (!status) return '';
+            if (status === 'synced') {
+                return sync?.synced_at ? `IMA TextThis WeekWatchText · ${this.formatDateTime(sync.synced_at)}` : 'IMA TextThis WeekWatchText';
+            }
+            if (status === 'already_synced') {
+                return sync?.synced_at ? `This WeekWatchText · ${this.formatDateTime(sync.synced_at)}` : 'This WeekWatchText';
+            }
+            if (status === 'already_exists') {
+                return sync?.synced_at ? `IMA TextWatchText · ${this.formatDateTime(sync.synced_at)}` : 'IMA TextWatchText';
+            }
+            if (status === 'not_configured') {
+                return 'WatchTextSaveText, IMA Text. ';
+            }
+            if (status === 'failed') {
+                return sync?.error ? `WatchTextSaveText, IMA UploadFailed: ${sync.error}` : 'WatchTextSaveText, IMA UploadFailed. ';
+            }
+            return '';
+        },
+
+        canRetryImaSync(sync) {
+            const status = String(sync?.status || '');
+            return ['failed', 'not_configured'].includes(status);
+        },
+
+        setFlash(text, type = 'info') {
+            this.flash = { text, type };
+            window.clearTimeout(this._flashTimer);
+            this._flashTimer = window.setTimeout(() => {
+                this.flash = { text: '', type: '' };
+            }, 3000);
+        },
+
+        formatDate(value) {
+            if (!value) return '--';
+            return String(value).slice(0, 10) || '--';
+        },
+
+        formatDateTime(value) {
+            if (!value) return '--';
+            const date = new Date(value);
+            if (Number.isNaN(date.getTime())) return String(value).replace('T', ' ').slice(0, 16);
+            return date.toLocaleString('zh-CN', {
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+        },
+
+        formatNumber(value) {
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed.toFixed(2) : '--';
+        },
+
+        priceChartMetric(value) {
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed.toFixed(2) : '--';
+        },
+
+        priceChartSignedPercent(value) {
+            const parsed = Number(value);
+            if (!Number.isFinite(parsed)) return '--';
+            return `${parsed >= 0 ? '+' : ''}${parsed.toFixed(2)}%`;
+        },
+
+        priceChartSignedClass(value) {
+            const parsed = Number(value);
+            if (!Number.isFinite(parsed)) return 'text-slate-400';
+            if (parsed > 0) return 'text-green-600';
+            if (parsed < 0) return 'text-red-600';
+            return 'text-slate-500';
+        },
+
+        priceChartTitle() {
+            if (!this.priceChartStock) return 'Text';
+            return `${this.priceChartStock.stock_name || this.priceChartStock.stock_id || 'Text'} ${this.priceChartStock.ticker || this.priceChartStock.stock_id || ''}`.trim();
+        },
+
+        priceChartSubtitle() {
+            if (!this.priceChartStock) return '';
+            const parts = [
+                this.priceChartStock.theme || '',
+                this.priceChartStock.industry || '',
+                this.priceChartStock.watch_started_at ? `Text ${this.formatDate(this.priceChartStock.watch_started_at)}` : ''
+            ].filter(Boolean);
+            return parts.join(' · ');
+        },
+
+        priceChartMetaLine() {
+            if (!this.priceChartData) return '';
+            const parts = [
+                this.priceChartData.as_of_date ? `Text ${this.priceChartData.as_of_date}` : '',
+                this.priceChartData?.meta?.provider ? `Text: ${String(this.priceChartData.meta.provider).toUpperCase()}` : ''
+            ].filter(Boolean);
+            return parts.join(' · ');
+        },
+
+        priceChartHasData() {
+            return Array.isArray(this.priceChartData?.series?.candles) && this.priceChartData.series.candles.length > 0;
+        },
+
+        priceChartNeedsHistoryHint() {
+            return !!this.priceChartData && this.priceChartData?.meta?.has_enough_history_for_ma200 === false;
+        },
+
+        priceChartTradingViewSymbol() {
+            const stock = this.priceChartStock || {};
+            const explicit = String(stock.tradingview_symbol || '').trim();
+            if (explicit) return explicit.toUpperCase();
+            const rawTicker = String(stock.ticker || stock.stock_id || '').trim();
+            if (!rawTicker) return '';
+            if (rawTicker.includes(':')) return rawTicker.toUpperCase();
+            const upper = rawTicker.toUpperCase();
+            const suffixMap = [
+                ['.HK', 'HKEX'],
+                ['.SH', 'SSE'],
+                ['.SS', 'SSE'],
+                ['.SZ', 'SZSE'],
+                ['.DE', 'XETR'],
+                ['.AS', 'EURONEXT'],
+                ['.VI', 'VIE'],
+                ['.T', 'TSE'],
+                ['.KS', 'KRX'],
+                ['.KQ', 'KRX'],
+            ];
+            for (const [suffix, exchange] of suffixMap) {
+                if (upper.endsWith(suffix)) {
+                    return `${exchange}:${upper.slice(0, -suffix.length)}`;
+                }
+            }
+            return `NASDAQ:${upper.replace('.US', '')}`;
+        },
+
+        closePriceChartModal() {
+            this.priceChartModalOpen = false;
+            this.priceChartLoading = false;
+            this.priceChartError = '';
+            this.priceChartStock = null;
+            this.priceChartData = null;
+            this.priceChartHover = null;
+            this.destroyPriceChart();
+            document.body.style.overflow = this.priceChartBodyOverflowBeforeModal || '';
+            this.priceChartBodyOverflowBeforeModal = '';
+            this.restoreModalFocus();
+        },
+
+        destroyPriceChart() {
+            if (this.priceChartChart) {
+                this.priceChartChart.destroy();
+                this.priceChartChart = null;
+            }
+        },
+
+        async openPriceChart(candidate) {
+            if (!candidate) return;
+            const cacheKey = `${candidate.stock_id || candidate.ticker || 'UNKNOWN'}|${this.priceChartRange}|${this.priceChartCacheVersion}`;
+            if (this.priceChartLoading) {
+                this.setFlash('TextLoadText, Text. ', 'warn');
+                return;
+            }
+            if (this.priceChartModalOpen && this.priceChartStock?.stock_id === candidate.stock_id && this.priceChartHasData()) {
+                return;
+            }
+
+            this.priceChartStock = { ...candidate };
+            this.priceChartError = '';
+            this.priceChartData = null;
+            this.priceChartHover = null;
+            this.captureModalFocus();
+            this.priceChartModalOpen = true;
+            this.priceChartBodyOverflowBeforeModal = document.body.style.overflow || '';
+            document.body.style.overflow = 'hidden';
+            this.destroyPriceChart();
+            this.$nextTick(() => {
+                this.$refs.priceChartModalClose?.focus();
+                window.requestAnimationFrame(() => this.renderPriceChart());
+            });
+
+            if (this.priceChartCache[cacheKey]) {
+                this.priceChartData = this.priceChartCache[cacheKey];
+                this.$nextTick(() => {
+                    window.requestAnimationFrame(() => this.renderPriceChart());
+                });
+                return;
+            }
+
+            this.priceChartLoading = true;
+            try {
+                const data = await this.requestJson(`/api/watchlist/${encodeURIComponent(candidate.stock_id)}/price-chart?range=${encodeURIComponent(this.priceChartRange)}`);
+                this.priceChartData = data;
+                if (data?.success) {
+                    this.priceChartCache[cacheKey] = data;
+                }
+                this.priceChartLoading = false;
+                this.$nextTick(() => {
+                    window.requestAnimationFrame(() => this.renderPriceChart());
+                });
+            } catch (error) {
+                console.error(error);
+                this.priceChartError = `Text: ${error.message || String(error)}`;
+                this.priceChartLoading = false;
+            }
+        },
+
+        renderPriceChart() {
+            this.destroyPriceChart();
+            if (!this.priceChartHasData()) return;
+            const container = document.getElementById('watchlistPriceChartContainer');
+            if (!container) return;
+            this.renderTradingViewPriceChart(container);
+        },
+
+        renderTradingViewPriceChart(container) {
+            if (typeof LightweightCharts === 'undefined') {
+                this.priceChartError = 'TradingView TextLoadFailed, Text';
+                return;
+            }
+            const chartData = this.priceChartData || {};
+            const candles = Array.isArray(chartData?.series?.candles) ? chartData.series.candles : [];
+            const ma50 = Array.isArray(chartData?.series?.ma50) ? chartData.series.ma50 : [];
+            const ma100 = Array.isArray(chartData?.series?.ma100) ? chartData.series.ma100 : [];
+            const ma200 = Array.isArray(chartData?.series?.ma200) ? chartData.series.ma200 : [];
+            const candleData = candles
+                .map(item => ({
+                    time: String(item.date || '').slice(0, 10),
+                    open: Number(item.open),
+                    high: Number(item.high),
+                    low: Number(item.low),
+                    close: Number(item.close),
+                }))
+                .filter(item => item.time && [item.open, item.high, item.low, item.close].every(Number.isFinite));
+            if (!candleData.length) return;
+            const lineData = (series) => (series || [])
+                .map(item => ({ time: String(item?.date || '').slice(0, 10), value: Number(item?.value) }))
+                .filter(item => item.time && Number.isFinite(item.value));
+            const baselinePrice = Number(this.priceChartStock?.revisit_metrics?.baseline_price);
+
+            container.innerHTML = '';
+            const chart = LightweightCharts.createChart(container, {
+                width: container.clientWidth || 920,
+                height: container.clientHeight || 520,
+                autoSize: true,
+                layout: {
+                    background: { type: 'solid', color: '#ffffff' },
+                    textColor: '#64748b',
+                    fontFamily: 'IBM Plex Sans, system-ui, sans-serif',
+                    attributionLogo: false,
+                },
+                grid: {
+                    vertLines: { color: 'rgba(226, 232, 240, 0.62)' },
+                    horzLines: { color: 'rgba(226, 232, 240, 0.72)' },
+                },
+                rightPriceScale: {
+                    borderColor: '#e2e8f0',
+                    scaleMargins: { top: 0.08, bottom: 0.08 },
+                },
+                timeScale: {
+                    borderColor: '#e2e8f0',
+                    rightOffset: 10,
+                    barSpacing: 10,
+                    minBarSpacing: 4,
+                    fixLeftEdge: false,
+                    fixRightEdge: false,
+                    timeVisible: false,
+                    secondsVisible: false,
+                },
+                crosshair: {
+                    mode: LightweightCharts.CrosshairMode?.Normal ?? 0,
+                    vertLine: {
+                        color: 'rgba(15, 23, 42, 0.32)',
+                        width: 1,
+                        style: LightweightCharts.LineStyle?.Dashed ?? 2,
+                        labelBackgroundColor: '#334155',
+                    },
+                    horzLine: {
+                        color: 'rgba(15, 23, 42, 0.24)',
+                        width: 1,
+                        style: LightweightCharts.LineStyle?.Dashed ?? 2,
+                        labelBackgroundColor: '#334155',
+                    },
+                },
+                localization: {
+                    priceFormatter: price => Number(price).toFixed(2),
+                },
+            });
+            const addSeries = (seriesType, options, fallbackName) => {
+                if (typeof chart.addSeries === 'function' && seriesType) {
+                    return chart.addSeries(seriesType, options);
+                }
+                return chart[fallbackName](options);
+            };
+            const candleSeries = addSeries(LightweightCharts.CandlestickSeries, {
+                upColor: '#26a69a',
+                downColor: '#ef5350',
+                borderUpColor: '#26a69a',
+                borderDownColor: '#ef5350',
+                wickUpColor: '#26a69a',
+                wickDownColor: '#ef5350',
+            }, 'addCandlestickSeries');
+            candleSeries.setData(candleData);
+            const addLine = (label, data, color, width = 1.7) => {
+                const series = addSeries(LightweightCharts.LineSeries, {
+                    title: label,
+                    color,
+                    lineWidth: width,
+                    priceLineVisible: false,
+                    lastValueVisible: false,
+                    crosshairMarkerVisible: false,
+                }, 'addLineSeries');
+                series.setData(data);
+                return series;
+            };
+            addLine('MA50', lineData(ma50), '#2962ff', 1.7);
+            addLine('MA100', lineData(ma100), '#b7791f', 1.65);
+            addLine('MA200', lineData(ma200), '#089981', 1.9);
+            if (Number.isFinite(baselinePrice)) {
+                candleSeries.createPriceLine({
+                    price: baselinePrice,
+                    color: '#1d4ed8',
+                    lineWidth: 1,
+                    lineStyle: LightweightCharts.LineStyle?.Dashed ?? 2,
+                    axisLabelVisible: true,
+                    title: 'Text',
+                });
+            }
+            const watchDate = this.priceChartStock?.watch_started_at ? String(this.priceChartStock.watch_started_at).slice(0, 10) : '';
+            if (watchDate) {
+                const marker = {
+                    time: watchDate,
+                    position: 'belowBar',
+                    color: '#334155',
+                    shape: 'arrowUp',
+                    text: 'TextWatch',
+                };
+                if (typeof LightweightCharts.createSeriesMarkers === 'function') {
+                    this.priceChartMarkers = LightweightCharts.createSeriesMarkers(candleSeries, [marker]);
+                } else if (typeof candleSeries.setMarkers === 'function') {
+                    candleSeries.setMarkers([marker]);
+                }
+            }
+            const tooltip = document.createElement('div');
+            tooltip.className = 'tv-price-tooltip';
+            tooltip.style.display = 'none';
+            container.appendChild(tooltip);
+            const byTime = new Map(candleData.map((item, index) => [item.time, { ...item, index }]));
+            chart.subscribeCrosshairMove(param => {
+                if (!param?.time || !param.point || param.point.x < 0 || param.point.y < 0) {
+                    tooltip.style.display = 'none';
+                    return;
+                }
+                const time = typeof param.time === 'string' ? param.time : `${param.time.year}-${String(param.time.month).padStart(2, '0')}-${String(param.time.day).padStart(2, '0')}`;
+                const item = byTime.get(time);
+                if (!item) {
+                    tooltip.style.display = 'none';
+                    return;
+                }
+                const prev = candleData[item.index - 1];
+                const dayChange = prev ? ((item.close / prev.close - 1) * 100) : null;
+                const sinceWatch = Number.isFinite(baselinePrice) ? ((item.close / baselinePrice - 1) * 100) : null;
+                this.priceChartHover = {
+                    open: item.open.toFixed(2),
+                    high: item.high.toFixed(2),
+                    low: item.low.toFixed(2),
+                    close: item.close.toFixed(2),
+                    dayChange,
+                    dayChangeText: Number.isFinite(dayChange) ? `${dayChange >= 0 ? '+' : ''}${dayChange.toFixed(2)}%` : '',
+                };
+                tooltip.innerHTML = `
+                    <div class="tv-price-tooltip-date">${time}</div>
+                    <div>O ${item.open.toFixed(2)} · H ${item.high.toFixed(2)}</div>
+                    <div>L ${item.low.toFixed(2)} · C ${item.close.toFixed(2)}</div>
+                    ${Number.isFinite(dayChange) ? `<div>Text ${dayChange >= 0 ? '+' : ''}${dayChange.toFixed(2)}%</div>` : ''}
+                    ${Number.isFinite(sinceWatch) ? `<div>Text ${sinceWatch >= 0 ? '+' : ''}${sinceWatch.toFixed(2)}%</div>` : ''}
+                `;
+                const x = Math.min(Math.max(param.point.x + 14, 8), container.clientWidth - 190);
+                const y = Math.min(Math.max(param.point.y + 14, 8), container.clientHeight - 118);
+                tooltip.style.left = `${x}px`;
+                tooltip.style.top = `${y}px`;
+                tooltip.style.display = 'block';
+            });
+            chart.timeScale().fitContent();
+            const handleResize = () => {
+                chart.applyOptions({
+                    width: container.clientWidth || 920,
+                    height: container.clientHeight || 520,
+                });
+            };
+            window.addEventListener('resize', handleResize);
+            this.priceChartChart = {
+                resize: handleResize,
+                destroy: () => {
+                    window.removeEventListener('resize', handleResize);
+                    tooltip.remove();
+                    chart.remove();
+                    container.innerHTML = '';
+                },
+            };
+        },
+
+        commentaryMeta(item) {
+            const pieces = [
+                item?.published_at ? this.formatDateTime(item.published_at) : '',
+                item?.source_group_id ? `Text ${item.source_group_id}` : item?.source_file || ''
+            ].filter(Boolean);
+            return pieces.join(' · ');
+        },
+
+        commentaryStatusText(candidate) {
+            if (candidate?.commentaryLoading) return 'LoadText';
+            if (Number(candidate?.commentaryMatchCount || 0) > 0) return `${Number(candidate.commentaryMatchCount)} Text`;
+            return 'No dataText';
+        },
+
+        filingsStatusText(candidate) {
+            if (candidate?.filingsLoading) return 'LoadText';
+            if (candidate?.filingsError) return 'LoadFailed';
+            const total = Number(candidate?.filingsPayload?.counts?.total || candidate?.filingsPayload?.items?.length || 0);
+            if (total > 0) return `${total} Text`;
+            return 'No dataFilings';
+        },
+
+        zsxqMeta(item) {
+            const pieces = [
+                item?.published_at ? this.formatDateTime(item.published_at) : '',
+                item?.source_group_id ? `Text ${item.source_group_id}` : item?.source_file || ''
+            ].filter(Boolean);
+            return pieces.join(' Text ');
+        },
+
+        zsxqStatusText(candidate) {
+            if (candidate?.zsxqLoading) return 'LoadText';
+            if (candidate?.zsxqError) return 'LoadFailed';
+            const matches = Number(candidate?.zsxqMatches?.match_count || candidate?.zsxqMatches?.items?.length || 0);
+            if (matches > 0) return `${matches} Text`;
+            return 'No dataText';
+        },
+
+        captureModalFocus() {
+            this.modalReturnFocusEl = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        },
+
+        restoreModalFocus() {
+            if (this.modalReturnFocusEl && typeof this.modalReturnFocusEl.focus === 'function') {
+                this.modalReturnFocusEl.focus();
+            }
+            this.modalReturnFocusEl = null;
+        },
+
+        trapFocus(event, refName) {
+            if (event.key !== 'Tab') return;
+            const root = this.$refs?.[refName];
+            if (!root) return;
+            const focusable = root.querySelectorAll(
+                'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+            );
+            if (!focusable.length) {
+                event.preventDefault();
+                return;
+            }
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            const active = document.activeElement;
+            if (event.shiftKey) {
+                if (active === first || !root.contains(active)) {
+                    event.preventDefault();
+                    last.focus();
+                }
+            } else if (active === last || !root.contains(active)) {
+                event.preventDefault();
+                first.focus();
+            }
+        },
+
+        openCommentaryModal(title, subtitle, items) {
+            this.commentaryModalTitle = title || 'Text';
+            this.commentaryModalSubtitle = subtitle || '';
+            this.commentaryModalItems = Array.isArray(items) ? items.map(item => ({ ...item })) : [];
+            this.captureModalFocus();
+            this.bodyOverflowBeforeModal = document.body.style.overflow || '';
+            this.commentaryModalOpen = true;
+            document.body.style.overflow = 'hidden';
+            this.$nextTick(() => {
+                this.$refs.commentaryModalClose?.focus();
+            });
+        },
+
+        closeCommentaryModal() {
+            this.commentaryModalOpen = false;
+            this.commentaryModalTitle = '';
+            this.commentaryModalSubtitle = '';
+            this.commentaryModalItems = [];
+            document.body.style.overflow = this.bodyOverflowBeforeModal || '';
+            this.bodyOverflowBeforeModal = '';
+            this.restoreModalFocus();
+        },
+
+        applyCommentaryPayload(payload) {
+            const stockMap = payload?.stocks || {};
+            this.candidates.forEach(candidate => {
+                const entry = stockMap[candidate.stock_id] || {};
+                candidate.commentaryLoading = false;
+                candidate.commentaryError = '';
+                candidate.commentaryKeywords = Array.isArray(entry.keywords_used) ? entry.keywords_used : [];
+                candidate.commentaryItems = Array.isArray(entry.items)
+                    ? entry.items.map(item => ({ ...item, expanded: false }))
+                    : [];
+                candidate.commentaryMatchCount = Number(entry.match_count || candidate.commentaryItems.length || 0);
+            });
+        },
+
+        async loadCommentary() {
+            this.candidates.forEach(candidate => {
+                candidate.commentaryLoading = true;
+                candidate.commentaryError = '';
+                candidate.commentaryItems = [];
+                candidate.commentaryMatchCount = 0;
+            });
+            try {
+                const data = await this.requestJson('/api/stock-commentary?context=watchlist');
+                this.applyCommentaryPayload(data);
+            } catch (error) {
+                console.error(error);
+                this.candidates.forEach(candidate => {
+                    candidate.commentaryLoading = false;
+                    candidate.commentaryError = 'TextLoadFailed';
+                    candidate.commentaryItems = [];
+                    candidate.commentaryMatchCount = 0;
+                });
+            }
+        },
+
+        applyFilingsPayload(candidate, payload) {
+            candidate.filingsLoading = false;
+            candidate.filingsError = '';
+            candidate.filingsPayload = {
+                ...payload,
+                items: Array.isArray(payload?.items) ? payload.items.map(item => ({ ...item })) : [],
+                counts: { ...(payload?.counts || {}) },
+                window: { ...(payload?.window || {}) },
+                cache: { ...(payload?.cache || {}) }
+            };
+        },
+
+        async loadFilings() {
+            await Promise.all(this.candidates.map(async candidate => {
+                candidate.filingsLoading = true;
+                candidate.filingsError = '';
+                candidate.filingsPayload = {
+                    items: [],
+                    counts: { total: 0, high_importance: 0 },
+                    window: {},
+                    cache: {}
+                };
+                try {
+                    const payload = await this.requestJson(`/api/watchlist/${encodeURIComponent(candidate.stock_id)}/filings`);
+                    this.applyFilingsPayload(candidate, payload);
+                } catch (error) {
+                    console.error(error);
+                    candidate.filingsLoading = false;
+                    candidate.filingsError = 'FilingsLoadFailed';
+                }
+            }));
+        },
+
+        applyZsxqPayload(candidate, payload) {
+            const items = Array.isArray(payload?.items) ? payload.items.map(item => ({ ...item })) : [];
+            candidate.zsxqLoading = false;
+            candidate.zsxqError = '';
+            candidate.zsxqMatches = {
+                keywords_used: Array.isArray(payload?.keywords_used) ? payload.keywords_used : [],
+                match_count: Number(payload?.match_count || items.length || 0),
+                header_match_count: Number(payload?.header_match_count || 0),
+                body_match_count: Number(payload?.body_match_count || 0),
+                source_group_count: Number(payload?.source_group_count || 0),
+                items,
+                window: payload?.window || {}
+            };
+        },
+
+        async loadZsxqMatches() {
+            await Promise.all(this.candidates.map(async candidate => {
+                candidate.zsxqLoading = true;
+                candidate.zsxqError = '';
+                candidate.zsxqMatches = {
+                    keywords_used: [],
+                    match_count: 0,
+                    header_match_count: 0,
+                    body_match_count: 0,
+                    source_group_count: 0,
+                    items: [],
+                    window: {}
+                };
+                try {
+                    const payload = await this.requestJson(`/api/watchlist/${encodeURIComponent(candidate.stock_id)}/zsxq-matches`);
+                    this.applyZsxqPayload(candidate, payload);
+                } catch (error) {
+                    console.error(error);
+                    candidate.zsxqLoading = false;
+                    candidate.zsxqError = 'CommunityLoadFailed';
+                }
+            }));
+        },
+
+        resetAddForm() {
+            this.addForm = {
+                stock_name: '',
+                ticker: '',
+                industry: '',
+                theme: '',
+                status: 'WatchText',
+                watch_reason: '',
+                not_buy_reason: '',
+                weekly_note: '',
+                watch_started_at: today
+            };
+            this.addMetaExpanded = false;
+        },
+
+        resetFilters() {
+            this.filters = {
+                search: '',
+                theme: '',
+                industry: '',
+                status: '',
+                groupBy: 'theme',
+                sortBy: 'change_desc',
+                onlyRevisit: false
+            };
+        },
+
+        async requestJson(url, options = {}) {
+            const response = await fetch(url, options);
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || data.error) {
+                throw new Error(data.error || `TextFailed (${response.status})`);
+            }
+            return data;
+        },
+
+        async loadWatchlist() {
+            this.loading = true;
+            try {
+                const data = await this.requestJson('/api/watchlist');
+                this.candidates = (data.candidates || []).map(item => this.normalizeCandidate(item));
+                this.imaSync = data.ima_sync_status || {};
+                await Promise.all([this.loadCommentary(), this.loadZsxqMatches(), this.loadFilings()]);
+            } catch (error) {
+                console.error(error);
+                this.setFlash(`LoadWatchTextFailed: ${error.message || error}`, 'error');
+            }
+            this.loading = false;
+        },
+
+        async syncWatchlistToIma(force = false) {
+            this.syncingIma = true;
+            try {
+                const data = await this.requestJson('/api/watchlist/sync-ima', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ force })
+                });
+                this.imaSync = data.ima_sync || {};
+                if (this.imaSync.status === 'synced') {
+                    this.setFlash('WatchText IMA. ', 'info');
+                } else if (this.imaSync.status === 'already_synced' || this.imaSync.status === 'already_exists') {
+                    this.setFlash('This WeekWatchText. ', 'info');
+                } else if (this.imaSync.status === 'not_configured') {
+                    this.setFlash('WatchTextSaveText, IMA Text. ', 'warn');
+                } else {
+                    this.setFlash('WatchTextSaveText, Text IMA UploadFailed. ', 'warn');
+                }
+            } catch (error) {
+                console.error(error);
+                this.setFlash(`TextFailed: ${error.message || error}`, 'error');
+            }
+            this.syncingIma = false;
+        },
+
+        async generateCandidateAiJudgment(candidate, force = true, silent = false) {
+            candidate.aiJudging = true;
+            const meta = { ok: false, skipped: false };
+            try {
+                const response = await fetch(`/api/watchlist/${encodeURIComponent(candidate.stock_id)}/ai-judgment`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ force })
+                });
+                const data = await response.json().catch(() => ({}));
+                if (data.candidate) {
+                    this.syncCandidate(candidate, data.candidate || candidate, { preserveDrafts: true });
+                }
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || `TextFailed (${response.status})`);
+                }
+                meta.ok = true;
+                meta.skipped = !!data.skipped;
+                if (!silent && !meta.skipped) {
+                    this.setFlash(`${candidate.stock_name || candidate.stock_id} Text AI Text. `, 'info');
+                }
+            } catch (error) {
+                console.error(error);
+                if (!silent) {
+                    this.setFlash(`AI TextFailed: ${error.message || error}`, 'error');
+                }
+            }
+            candidate.aiJudging = false;
+            return meta;
+        },
+
+        async generateAllAiJudgments(force = false) {
+            this.generatingAiAll = true;
+            const queue = this.candidates.slice();
+            this.aiAllProgress = { total: queue.length, completed: 0, failed: 0 };
+            let generated = 0;
+            let skipped = 0;
+            const concurrency = Math.min(4, Math.max(1, queue.length));
+            const worker = async () => {
+                while (queue.length) {
+                    const candidate = queue.shift();
+                    if (!candidate) break;
+                    const meta = await this.generateCandidateAiJudgment(candidate, force, true);
+                    this.aiAllProgress.completed += 1;
+                    if (meta.ok && !meta.skipped) {
+                        generated += 1;
+                    } else if (meta.skipped) {
+                        skipped += 1;
+                    } else {
+                        this.aiAllProgress.failed += 1;
+                    }
+                }
+            };
+            await Promise.all(Array.from({ length: concurrency }).map(() => worker()));
+            this.generatingAiAll = false;
+            this.setFlash(`AI Text: Text ${generated}, Text ${skipped}, Failed ${this.aiAllProgress.failed}. `, this.aiAllProgress.failed ? 'warn' : 'info');
+        },
+
+        async addCandidate() {
+            if (!this.addForm.stock_name.trim() && !this.addForm.ticker.trim()) {
+                this.setFlash('TextStockTextStockTicker. ', 'warn');
+                return;
+            }
+
+            this.creating = true;
+            try {
+                const payload = {
+                    stock_name: this.addForm.stock_name.trim(),
+                    ticker: this.addForm.ticker.trim(),
+                    industry: this.addForm.industry.trim(),
+                    theme: this.addForm.theme.trim(),
+                    status: this.addForm.status,
+                    watch_reason: this.addForm.watch_reason.trim(),
+                    not_buy_reason: this.addForm.not_buy_reason.trim(),
+                    weekly_note: this.addForm.weekly_note.trim(),
+                    watch_started_at: this.addForm.watch_started_at || today
+                };
+                const data = await this.requestJson('/api/watchlist', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const normalized = this.normalizeCandidate(data.candidate || payload);
+                const existingIndex = this.candidates.findIndex(item => item.stock_id === normalized.stock_id);
+                if (existingIndex >= 0) {
+                    this.candidates.splice(existingIndex, 1, normalized);
+                } else {
+                    this.candidates.unshift(normalized);
+                }
+                await Promise.all([this.loadCommentary(), this.loadZsxqMatches()]);
+
+                this.setFlash('TextWatchText. ', 'info');
+                this.resetAddForm();
+            } catch (error) {
+                console.error(error);
+                this.setFlash(`TextFailed: ${error.message || error}`, 'error');
+            }
+            this.creating = false;
+        },
+
+        async deleteCandidate(candidate) {
+            if (!window.confirm(`ConfirmTextWatchText ${candidate.stock_name || candidate.stock_id} Text?`)) {
+                return;
+            }
+
+            candidate.isSaving = true;
+            try {
+                await this.requestJson(`/api/watchlist/${encodeURIComponent(candidate.stock_id)}`, {
+                    method: 'DELETE'
+                });
+                this.candidates = this.candidates.filter(item => item.stock_id !== candidate.stock_id);
+                this.setFlash('TextWatchText. ', 'info');
+            } catch (error) {
+                console.error(error);
+                candidate.isSaving = false;
+                this.setFlash(`TextFailed: ${error.message || error}`, 'error');
+                return;
+            }
+        },
+
+        async ackRevisit(candidate) {
+            candidate.ackingRevisit = true;
+            try {
+                const data = await this.requestJson(`/api/watchlist/${encodeURIComponent(candidate.stock_id)}/ack-revisit`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                this.syncCandidate(candidate, data.candidate || candidate, { preserveDrafts: true });
+                this.setFlash(`Text ${candidate.stock_name || candidate.stock_id} Text. `, 'info');
+            } catch (error) {
+                console.error(error);
+                this.setFlash(`TextFailed: ${error.message || error}`, 'error');
+            }
+            candidate.ackingRevisit = false;
+        },
+
+        async refreshCandidatePerformance(candidate, silent = false) {
+            candidate.refreshingPerformance = true;
+            try {
+                const data = await this.requestJson(`/api/watchlist/${encodeURIComponent(candidate.stock_id)}/refresh-performance`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                this.syncCandidate(candidate, data.candidate || candidate);
+                candidate.performance_summary = data.performance_summary || candidate.performance_summary || '';
+                candidate.performance_data = data.performance_data || candidate.performance_data || {};
+                if (!silent) {
+                    this.setFlash(`TextRefresh ${candidate.stock_name || candidate.stock_id} TextThis WeekText. `, 'info');
+                }
+            } catch (error) {
+                console.error(error);
+                if (!silent) {
+                    this.setFlash(`RefreshFailed: ${error.message || error}`, 'error');
+                }
+            }
+            candidate.refreshingPerformance = false;
+        },
+
+        async batchRefreshNewsAndSummary() {
+            this.batchProcessing = true;
+            const stockIds = this.candidates.map(c => c.stock_id);
+            let completed = 0;
+            const total = stockIds.length;
+
+            for (const stockId of stockIds) {
+                try {
+                    this.batchProgress = `(${completed + 1}/${total})`;
+
+                    // RefreshNews
+                    await this.requestJson(`/api/weekly-review/refresh-stock-news/${stockId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({})
+                    });
+
+                    // Text 2 Text API Text
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+
+                    // GenerateSummary
+                    await this.requestJson(`/api/weekly-review/generate-news-summary/${stockId}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({})
+                    });
+
+                    completed++;
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                } catch (error) {
+                    console.error(`Text ${stockId} Failed:`, error);
+                }
+            }
+
+            this.batchProcessing = false;
+            this.batchProgress = '';
+            this.setFlash(`Text: ${completed}/${total} Text`, 'info');
+        },
+
+        async refreshAllPerformance() {
+            this.refreshingAll = true;
+            try {
+                const data = await this.requestJson('/api/watchlist/refresh-all', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+
+                const results = data.results || [];
+                for (const result of results) {
+                    const target = this.candidates.find(item => item.stock_id === result.stock_id);
+                    if (!target) continue;
+                    if (result.candidate) {
+                        this.syncCandidate(target, result.candidate, { preserveDrafts: true });
+                    }
+                    if (result.performance_summary) {
+                        target.performance_summary = result.performance_summary;
+                    }
+                    if (result.performance_data) {
+                        target.performance_data = result.performance_data;
+                    }
+                }
+
+                const okCount = results.filter(item => item.success).length;
+                const failCount = results.length - okCount;
+                this.setFlash(
+                    failCount > 0
+                        ? `TextRefreshText: ${okCount} TextSuccess, ${failCount} TextFailed. `
+                        : `TextRefreshText: ${okCount} Text. `,
+                    failCount > 0 ? 'warn' : 'info'
+                );
+            } catch (error) {
+                console.error(error);
+                this.setFlash(`TextRefreshFailed: ${error.message || error}`, 'error');
+            }
+            this.refreshingAll = false;
+        }
+    };
+}
+</script>
+{% endblock %}

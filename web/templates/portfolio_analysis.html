@@ -1,0 +1,950 @@
+{% extends "base.html" %}
+
+{% block title %}TextAnalysis - Investment Assistant{% endblock %}
+
+{% block content %}
+<div x-data="portfolioAnalysis()" x-init="init()" class="space-y-6 factor-lab-shell">
+    <section class="hero-band factor-hero">
+        <div class="page-header">
+            <div>
+                <div class="page-kicker">TextRiskText</div>
+                <h1 class="page-title">TextAnalysis</h1>
+                <p class="page-subtitle">TextAnalysisText / Text ETF / ADR Holdings, TextHoldingsReturnText/ETF Text, TextRisk, TextThis WeekText. </p>
+            </div>
+            <div class="toolbar">
+                <select x-model="factorModelPack" class="control-select min-h-[2.5rem] px-3 py-2 border border-slate-300 rounded-xl text-sm bg-white text-slate-700">
+                    <option value="us_equity_lab_v1">FF / Q-Factor</option>
+                    <option value="barra_lite_us_v1">Barra-lite MVP</option>
+                </select>
+                <select x-model.number="factorDays" class="control-select min-h-[2.5rem] px-3 py-2 border border-slate-300 rounded-xl text-sm bg-white text-slate-700">
+                    <option value="126">Text 6 Text</option>
+                    <option value="252">Text 1 Text</option>
+                    <option value="504">Text 2 Text</option>
+                </select>
+                <select x-model="benchmarkMode" class="control-select min-h-[2.5rem] px-3 py-2 border border-slate-300 rounded-xl text-sm bg-white text-slate-700">
+                    <option value="equal_weight_active_holdings">Equal-weight benchmark</option>
+                    <option value="custom_benchmark_holdings">Text</option>
+                </select>
+                <button @click="refreshData()" :disabled="loading" class="btn-secondary">RefreshHoldings</button>
+                <button @click="runFactorAnalysis()" :disabled="!canRunFactorAnalysis()" class="btn-primary">
+                    <span x-show="!factorLoading">Text</span>
+                    <span x-show="factorLoading">AnalysisText...</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-card" x-show="benchmarkMode === 'custom_benchmark_holdings'">
+        <div class="section-body space-y-3">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                    <div class="metric-label">Text</div>
+                    <div class="text-xs text-slate-500">TextCurrentTextAnalysisHoldingsText, TextAutoText. </div>
+                </div>
+                <div class="flex items-center gap-3 text-xs text-slate-500">
+                    <span>Total <span class="numeric" x-text="formatPct(benchmarkWeightTotalPct(), 1)"></span></span>
+                    <button type="button" class="btn-secondary text-xs" @click="resetBenchmarkRows()">Reset equal-weight</button>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Ticker</th>
+                            <th scope="col">Name</th>
+                            <th scope="col" class="text-right">Portfolio</th>
+                            <th scope="col" class="text-right">Benchmark</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="row in benchmarkRows" :key="row.stock_id">
+                            <tr>
+                                <td class="numeric" x-text="row.ticker"></td>
+                                <td x-text="row.stock_name"></td>
+                                <td class="text-right numeric" x-text="formatPct(row.portfolio_weight_pct, 1)"></td>
+                                <td class="text-right">
+                                    <input type="number" min="0" step="0.1" x-model.number="row.weight_pct" class="control-input w-24 rounded-lg border border-slate-300 px-2 py-1 text-right text-sm numeric">
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <div x-show="showLoadingState()" class="loading-state section-card factor-status-stage">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-slate-700"></div>
+        <p class="mt-3 text-sm">TextLoadThis WeekHoldingsTextSaveTextAnalysisResult...</p>
+    </div>
+
+    <div x-show="showErrorState()" class="section-card error-state factor-status-stage">
+        <h2 class="text-xl font-semibold text-slate-900">CurrentTextGenerateTextAnalysis</h2>
+        <p class="mt-2 text-sm text-slate-500" x-text="factorError"></p>
+        <p class="mt-3 text-sm text-slate-500">TextWeekly ReviewTextHoldings, Text, Text. </p>
+        <div class="mt-5 flex flex-wrap gap-3 justify-center">
+            <button @click="refreshData()" :disabled="loading" class="btn-secondary">TextLoad</button>
+            <a href="/weekly-review" class="btn-primary">TextWeekly Review</a>
+        </div>
+    </div>
+
+    <div x-show="showEmptyState()" class="section-card empty-state factor-status-stage">
+        <h2 class="text-xl font-semibold text-slate-900">No dataHoldingsText</h2>
+        <p class="mt-2 text-sm text-slate-500">TextWeekly ReviewTextHoldingsTextCost, TextAnalysis. </p>
+        <div class="mt-5">
+            <a href="/weekly-review" class="btn-primary">TextWeekly Review</a>
+        </div>
+    </div>
+
+    <div x-show="showSuccessState()" class="space-y-6 diagnostics-stage">
+        <div x-show="!factorLoaded && !factorLoading" class="section-card border border-slate-200 bg-slate-50 factor-status-stage">
+            <div class="section-body">
+                <h2 class="text-lg font-semibold text-slate-900">Text: Text</h2>
+                <p class="mt-2 text-sm text-slate-500">CurrentHoldingsTextLoad, TextAnalysisResult. TextTextTextGenerateTextAnalysisText. </p>
+            </div>
+        </div>
+
+        <div class="space-y-6">
+            <section class="section-card">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">AnalysisText</h2>
+                        <p class="section-description">TextHoldingsText, Text. </p>
+                    </div>
+                    <div class="status-badge status-neutral">
+                        <span>ReviewText</span>
+                        <span class="numeric" x-text="currentReviewWeekId || '--'"></span>
+                    </div>
+                </div>
+                <div class="section-body space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 factor-summary-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Text</div>
+                            <div class="metric-value numeric" x-text="formatMoney(totalValue)"></div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">TextP&L</div>
+                            <div class="metric-value numeric" :class="totalPnl >= 0 ? 'text-green-700' : 'text-red-700'" x-text="formatMoney(totalPnl)"></div>
+                            <div class="metric-note numeric" x-text="formatPct(totalPnlPct)"></div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">TextHoldingsText</div>
+                            <div class="metric-value numeric" x-text="holdings.length"></div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-label">Text</div>
+                            <div class="metric-value numeric" x-text="usHoldings.length"></div>
+                            <div class="metric-note numeric" x-text="holdings.length > 0 ? `Text ${usHoldings.length} / ${holdings.length}` : 'No dataHoldings'"></div>
+                        </div>
+                    </div>
+                    <div x-show="nonUsHoldings.length > 0" class="alert-banner warn">
+                        <strong>Text: </strong>
+                        <span x-text="nonUsHoldings.map(item => item.stock_name || item.stock_id).join(' / ')"></span>
+                    </div>
+                </div>
+            </section>
+
+            <template x-if="factorLoaded">
+                <div class="space-y-6">
+
+                    <!-- ═══ ZONE 1: RiskText ═══ -->
+                    <div class="text-xs font-medium text-slate-400 uppercase tracking-widest mt-2">RiskText - Text?</div>
+
+                    <section class="section-card" x-show="(factorResult.factor_risk_alerts || []).length > 0">
+                        <div class="section-header">
+                            <div>
+                                <h2 class="section-title">TextRiskText</h2>
+                                <p class="section-description">TextContribution, HoldingsRisk, TextRiskTextRiskText. </p>
+                            </div>
+                        </div>
+                        <div class="section-body grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <template x-for="alert in factorRiskAlertRows()" :key="alert.type + alert.title">
+                                <div class="rounded-lg border px-4 py-3" :class="factorRiskAlertClass(alert)">
+                                    <div class="text-xs font-semibold uppercase tracking-wide" x-text="alert.severity"></div>
+                                    <div class="mt-1 font-semibold text-slate-900" x-text="alert.title"></div>
+                                    <div class="mt-1 text-sm" x-text="alert.message"></div>
+                                </div>
+                            </template>
+                        </div>
+                    </section>
+
+                    <section class="section-card" x-show="factorResult.factor_risk_delta?.available">
+                        <div class="section-header">
+                            <div>
+                                <h2 class="section-title">TextRiskText</h2>
+                                <p class="section-description">TextCurrentSaveResultTextSaveResultText, TextRiskText. </p>
+                            </div>
+                            <span class="status-badge status-neutral" x-text="factorResult.factor_risk_delta?.previous_week_id || '--'"></span>
+                        </div>
+                        <div class="section-body space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3" x-show="factorRiskDeltaAlerts().length > 0">
+                                <template x-for="alert in factorRiskDeltaAlerts()" :key="alert.type + alert.title">
+                                    <div class="section-card-muted p-3">
+                                        <div class="metric-label" x-text="alert.severity"></div>
+                                        <div class="mt-1 font-semibold text-slate-900" x-text="alert.title"></div>
+                                        <div class="mt-1 text-sm text-slate-600" x-text="alert.message"></div>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="overflow-x-auto" x-show="factorRiskDeltaRows().length > 0">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Factor</th>
+                                            <th scope="col" class="text-right">RiskWeightText</th>
+                                            <th scope="col" class="text-right">Text</th>
+                                            <th scope="col" class="text-right">Now</th>
+                                            <th scope="col" class="text-right">Previous</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="row in factorRiskDeltaRows()" :key="row.factor">
+                                            <tr>
+                                                <td>
+                                                    <div class="font-medium text-slate-900" x-text="row.label || row.factor"></div>
+                                                    <div class="text-xs text-slate-500" x-text="row.factor"></div>
+                                                </td>
+                                                <td class="text-right numeric font-semibold" x-text="signed(Number(row.risk_share_delta || 0) * 100, 1) + '%'"></td>
+                                                <td class="text-right numeric" x-text="signed(row.exposure_delta, 3)"></td>
+                                                <td class="text-right numeric" x-text="formatPct(Number(row.current_risk_share || 0) * 100, 1)"></td>
+                                                <td class="text-right numeric" x-text="formatPct(Number(row.previous_risk_share || 0) * 100, 1)"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- RiskText -->
+                    <section class="section-card" x-show="factorResult.risk_metrics && !factorResult.risk_metrics.error">
+                        <div class="section-header">
+                            <div>
+                                <h2 class="section-title">RiskText</h2>
+                                <p class="section-description">TextRiskText, Text: Text=Text, Text=Text, Text=Text. </p>
+                            </div>
+                        </div>
+                        <div class="section-body grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
+                            <template x-for="card in riskCards()" :key="card.key">
+                                <div class="metric-card border-l-4" :class="card.borderClass">
+                                    <div class="metric-label" x-text="card.label"></div>
+                                    <div class="metric-value numeric" :class="card.textClass" x-text="card.display"></div>
+                                    <div class="metric-note" x-text="card.note"></div>
+                                </div>
+                            </template>
+                        </div>
+                    </section>
+                    <section class="section-card" x-show="factorResult.risk_metrics && factorResult.risk_metrics.error">
+                        <div class="section-header"><div><h2 class="section-title">RiskText</h2></div></div>
+                        <div class="section-body">
+                            <div class="section-card-muted p-6 text-center text-sm text-slate-500" x-text="factorResult.risk_metrics?.error || 'Text'"></div>
+                        </div>
+                    </section>
+
+                    <section class="section-card" x-show="factorResult.risk_decomposition && !factorResult.risk_decomposition.error">
+                        <div class="section-header">
+                            <div>
+                                <h2 class="section-title">Barra-lite RiskText</h2>
+                                <p class="section-description">TextRiskTextRisk, Text, TextRiskText. </p>
+                            </div>
+                        </div>
+                        <div class="section-body space-y-4">
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <template x-for="card in riskDecompositionCards()" :key="card.key">
+                                    <div class="metric-card">
+                                        <div class="metric-label" x-text="card.label"></div>
+                                        <div class="metric-value numeric" x-text="card.value"></div>
+                                        <div class="metric-note" x-text="card.note"></div>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4" x-show="activeRiskCards().length > 0">
+                                <template x-for="card in activeRiskCards()" :key="card.key">
+                                    <div class="metric-card">
+                                        <div class="metric-label" x-text="card.label"></div>
+                                        <div class="metric-value numeric" x-text="card.value"></div>
+                                        <div class="metric-note" x-text="card.note"></div>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3" x-show="factorResult.risk_contribution_summary">
+                                <template x-for="card in riskContributionSummaryCards()" :key="card.key">
+                                    <div class="section-card-muted p-3">
+                                        <div class="metric-label" x-text="card.label"></div>
+                                        <div class="mt-1 text-base font-semibold text-slate-900" x-text="card.value"></div>
+                                        <div class="mt-1 text-xs text-slate-500" x-text="card.note"></div>
+                                    </div>
+                                </template>
+                            </div>
+                            <template x-if="covarianceQualityCard()">
+                                <div class="section-card-muted p-4 flex flex-wrap items-center justify-between gap-3">
+                                    <div>
+                                        <div class="metric-label">Text</div>
+                                        <div class="text-sm font-semibold text-slate-900" x-text="covarianceQualityCard().title"></div>
+                                    </div>
+                                    <div class="text-right text-xs text-slate-500" x-text="covarianceQualityCard().note"></div>
+                                </div>
+                            </template>
+                            <div class="overflow-x-auto" x-show="activeRiskDrilldownGroups().length > 0">
+                                <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Active exposure drivers</div>
+                                    <div class="text-xs text-slate-500">Portfolio minus benchmark</div>
+                                </div>
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Factor</th>
+                                            <th scope="col" class="text-right">Active</th>
+                                            <th scope="col" class="text-right">Portfolio</th>
+                                            <th scope="col" class="text-right">Benchmark</th>
+                                            <th scope="col">Top contributors</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="group in activeRiskDrilldownGroups()" :key="group.factor">
+                                            <tr>
+                                                <td>
+                                                    <div class="font-medium text-slate-900" x-text="group.label || group.factor"></div>
+                                                    <div class="text-xs text-slate-500" x-text="group.factor"></div>
+                                                </td>
+                                                <td class="text-right numeric font-semibold" x-text="signed(group.active_exposure, 3)"></td>
+                                                <td class="text-right numeric" x-text="signed(group.portfolio_exposure, 3)"></td>
+                                                <td class="text-right numeric" x-text="signed(group.benchmark_exposure, 3)"></td>
+                                                <td class="text-xs text-slate-600" x-text="activeRiskContributorText(group)"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="overflow-x-auto" x-show="factorRiskRows().length > 0">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Text</th>
+                                            <th scope="col" class="text-right">Text</th>
+                                            <th scope="col" class="text-right">TextContribution</th>
+                                            <th scope="col" class="text-right">Weight</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="row in factorRiskRows()" :key="row.factor">
+                                            <tr>
+                                                <td>
+                                                    <div class="font-medium text-slate-900" x-text="row.label || row.factor"></div>
+                                                    <div class="text-xs text-slate-500" x-text="row.factor"></div>
+                                                </td>
+                                                <td class="text-right numeric" x-text="signed(row.exposure, 3)"></td>
+                                                <td class="text-right numeric" x-text="signed(row.variance_contribution, 6)"></td>
+                                                <td class="text-right numeric font-semibold" x-text="formatPct(row.variance_share * 100, 1)"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="overflow-x-auto" x-show="specificRiskRows().length > 0">
+                                <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Specific risk drivers</div>
+                                    <div class="text-xs text-slate-500" x-text="specificRiskModelNote()"></div>
+                                </div>
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Holding</th>
+                                            <th scope="col" class="text-right">Weight</th>
+                                            <th scope="col" class="text-right">Variance</th>
+                                            <th scope="col" class="text-right">Share</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="row in specificRiskRows()" :key="row.stock_id">
+                                            <tr>
+                                                <td>
+                                                    <div class="font-medium text-slate-900" x-text="row.stock_name || row.ticker || row.stock_id"></div>
+                                                    <div class="text-xs text-slate-500" x-text="row.ticker || row.stock_id"></div>
+                                                    <div class="text-xs text-slate-400" x-show="row.residual_volatility_pct != null" x-text="`Residual vol ${formatPct(row.residual_volatility_pct, 1)} / raw ${formatPct(row.raw_volatility_pct, 1)}`"></div>
+                                                </td>
+                                                <td class="text-right numeric" x-text="formatPct(Number(row.weight || 0) * 100, 1)"></td>
+                                                <td class="text-right numeric" x-text="signed(row.variance_contribution, 6)"></td>
+                                                <td class="text-right numeric font-semibold" x-text="formatPct(Number(row.variance_share || 0) * 100, 1)"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="section-card" x-show="factorResult.factor_data_quality">
+                        <div class="section-header">
+                            <div>
+                                <h2 class="section-title">Factor data quality</h2>
+                                <p class="section-description">TextHoldingsText, Text. </p>
+                            </div>
+                        </div>
+                        <div class="section-body space-y-4">
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <template x-for="card in factorDataQualitySummaryCards()" :key="card.key">
+                                    <div class="metric-card">
+                                        <div class="metric-label" x-text="card.label"></div>
+                                        <div class="metric-value numeric" x-text="card.value"></div>
+                                        <div class="metric-note" x-text="card.note"></div>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="overflow-x-auto" x-show="factorDataQualityRows().length > 0">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">Factor</th>
+                                            <th scope="col">Source</th>
+                                            <th scope="col" class="text-right">Coverage</th>
+                                            <th scope="col">Confidence</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="row in factorDataQualityRows()" :key="row.factor">
+                                            <tr>
+                                                <td>
+                                                    <div class="font-medium text-slate-900" x-text="row.label || row.factor"></div>
+                                                    <div class="text-xs text-slate-500" x-text="row.factor"></div>
+                                                </td>
+                                                <td class="text-sm text-slate-600" x-text="row.source"></td>
+                                                <td class="text-right numeric" x-text="formatPct(Number(row.coverage_ratio || 0) * 100, 0)"></td>
+                                                <td>
+                                                    <span class="status-badge"
+                                                          :class="row.confidence === 'high' ? 'status-positive' : row.confidence === 'medium' ? 'status-warning' : 'status-negative'"
+                                                          x-text="row.confidence"></span>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="section-card" x-show="factorResult.analysis_metadata">
+                        <div class="section-header">
+                            <div>
+                                <h2 class="section-title">Analysis metadata</h2>
+                                <p class="section-description">TextRiskText, Text, Text. </p>
+                            </div>
+                        </div>
+                        <div class="section-body grid grid-cols-1 md:grid-cols-4 gap-3">
+                            <template x-for="card in analysisMetadataCards()" :key="card.key">
+                                <div class="metric-card">
+                                    <div class="metric-label" x-text="card.label"></div>
+                                    <div class="metric-value text-base leading-6" x-text="card.value"></div>
+                                    <div class="metric-note" x-text="card.note"></div>
+                                </div>
+                            </template>
+                        </div>
+                    </section>
+
+                    <section class="section-card" x-show="factorResult.factor_input_lineage || factorResult.factor_risk_delta?.lineage_comparison">
+                        <div class="section-header">
+                            <div>
+                                <h2 class="section-title">Input lineage</h2>
+                                <p class="section-description">TextHoldingsText, TextSettingsText, Text. </p>
+                            </div>
+                        </div>
+                        <div class="section-body grid grid-cols-1 md:grid-cols-4 gap-3">
+                            <template x-for="card in factorLineageCards()" :key="card.key">
+                                <div class="metric-card">
+                                    <div class="metric-label" x-text="card.label"></div>
+                                    <div class="metric-value text-base leading-6" x-text="card.value"></div>
+                                    <div class="metric-note" x-text="card.note"></div>
+                                </div>
+                            </template>
+                        </div>
+                    </section>
+
+                    <!-- Text -->
+                    <section class="section-card" x-show="(factorResult.stress_scenarios || []).length > 0">
+                        <div class="section-header">
+                            <div>
+                                <h2 class="section-title">Text</h2>
+                                <p class="section-description">5 Text, Text. </p>
+                            </div>
+                        </div>
+                        <div class="section-body overflow-x-auto">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Text</th>
+                                        <th scope="col">Text</th>
+                                        <th scope="col" class="text-right">Text</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="row in (factorResult.stress_scenarios || [])" :key="row.scenario">
+                                        <tr :class="stressRowClass(row.expected_loss_pct)">
+                                            <td class="font-medium" x-text="row.scenario"></td>
+                                            <td class="text-sm" x-text="row.description"></td>
+                                            <td class="text-right numeric font-semibold" x-text="row.missing_factor ? '-' : (row.expected_loss_pct + '%')" :title="row.missing_factor ? 'TextbetaText' : ''"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <!-- ═══ ZONE 2: Text ═══ -->
+                    <div class="text-xs font-medium text-slate-400 uppercase tracking-widest mt-12">Text - Text?</div>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                        <section class="section-card xl:col-span-7">
+                            <div class="section-header">
+                                <div>
+                                    <h2 class="section-title">Text</h2>
+                                    <p class="section-description">TextThis WeekText, Text / RiskText. </p>
+                                </div>
+                            </div>
+                            <div class="section-body grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div class="metric-card">
+                                    <div class="metric-label">This WeekText</div>
+                                    <div class="metric-value" x-text="factorResult.primary_model?.label || '--'"></div>
+                                    <div class="metric-note" x-text="factorResult.primary_model?.reason || 'Text FF Core Text Q-Factor TextAutoText. '"></div>
+                                </div>
+                                <div class="metric-card">
+                                    <div class="metric-label">Text</div>
+                                    <div class="metric-value" x-text="factorResult.confidence_summary?.level || '--'"></div>
+                                    <div class="metric-note" x-text="factorResult.confidence_summary?.summary || ''"></div>
+                                </div>
+                                <div class="metric-card">
+                                    <div class="metric-label">This WeekTextRisk</div>
+                                    <div class="metric-value text-base leading-7" x-text="factorResult.warnings?.[0] || 'CurrentTextRiskText. '"></div>
+                                </div>
+                            </div>
+                            <div class="section-body pt-0">
+                                <div class="section-card-muted p-4">
+                                    <div class="metric-label">Text</div>
+                                    <p class="mt-3 text-sm leading-7 text-slate-800" x-text="factorResult.portfolio_diagnosis?.map(item => item.summary).join(' ') || 'TextAnalysisText, TextAutoText. '"></p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="section-card xl:col-span-5">
+                            <div class="section-header">
+                                <div>
+                                    <h2 class="section-title">TextStatus</h2>
+                                    <p class="section-description">Text, TextHoldingsText. </p>
+                                </div>
+                            </div>
+                            <div class="section-body space-y-3 text-sm">
+                                <div class="alert-banner info" x-show="(factorResult.fallback_used || []).length > 0">
+                                    <strong>Text: </strong>
+                                    <span x-text="(factorResult.fallback_used || []).join(' / ')"></span>
+                                </div>
+                                <div class="alert-banner warn" x-show="(factorResult.unsupported_holdings || []).length > 0">
+                                    <strong>Text: </strong>
+                                    <span x-text="factorResult.unsupported_holdings.map(item => item.stock_name || item.stock_id).join(' / ')"></span>
+                                </div>
+                                <template x-for="row in sourceStatusRows()" :key="row.key">
+                                    <div class="flex items-start justify-between gap-3 border border-slate-200 rounded-xl px-4 py-3">
+                                        <div>
+                                            <div class="font-semibold text-slate-900" x-text="row.label"></div>
+                                            <div class="text-xs text-slate-500 mt-1" x-text="row.note"></div>
+                                        </div>
+                                        <span class="status-badge" :class="row.success ? 'status-positive' : 'status-warning'" x-text="row.success ? 'Text' : 'Text'"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </section>
+                    </div>
+
+                    <section class="section-card">
+                        <div class="section-header">
+                            <div>
+                                <h2 class="section-title">Text</h2>
+                                <p class="section-description">FF Core Text Q-Factor Text, TextAutoText. </p>
+                            </div>
+                        </div>
+                        <div class="section-body grid grid-cols-1 lg:grid-cols-2 gap-4 factor-model-grid">
+                            <template x-for="item in (factorResult.model_comparison || [])" :key="item.key">
+                                <div class="section-card-muted p-4">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div>
+                                            <div class="text-base font-semibold text-slate-900" x-text="item.label"></div>
+                                            <div class="text-sm text-slate-500 mt-1" x-text="item.description"></div>
+                                        </div>
+                                        <span class="status-badge" :class="item.fit_rank === 1 ? 'status-positive' : 'status-neutral'" x-text="item.fit_rank === 1 ? 'Text' : `Text ${item.fit_rank}`"></span>
+                                    </div>
+                                    <div class="mt-4 grid grid-cols-2 gap-3 text-sm">
+                                        <div class="rounded-xl bg-white border border-slate-200 px-3 py-2">
+                                            <div class="text-xs text-slate-500">Text</div>
+                                            <div class="mt-1 font-semibold numeric" x-text="formatPct(item.r_squared * 100, 1)"></div>
+                                        </div>
+                                        <div class="rounded-xl bg-white border border-slate-200 px-3 py-2">
+                                            <div class="text-xs text-slate-500">Text</div>
+                                            <div class="mt-1 font-semibold numeric" x-text="formatPct(item.stability_score * 100, 0)"></div>
+                                        </div>
+                                        <div class="rounded-xl bg-white border border-slate-200 px-3 py-2">
+                                            <div class="text-xs text-slate-500">Alpha</div>
+                                            <div class="mt-1 font-semibold numeric" x-text="formatPct(item.alpha * 100, 2)"></div>
+                                        </div>
+                                        <div class="rounded-xl bg-white border border-slate-200 px-3 py-2">
+                                            <div class="text-xs text-slate-500">Text</div>
+                                            <div class="mt-1 font-semibold numeric" x-text="item.n_observations || 0"></div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-3 text-sm text-red-700" x-show="item.error" x-text="item.error"></div>
+                                </div>
+                            </template>
+                        </div>
+                    </section>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                        <section class="section-card xl:col-span-6">
+                            <div class="section-header">
+                                <div>
+                                    <h2 class="section-title">Text</h2>
+                                    <p class="section-description">Text, Text. </p>
+                                </div>
+                            </div>
+                            <div class="section-body space-y-4">
+                                <div>
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Portfolio risk radar</div>
+                                    <div class="text-sm text-slate-500">TextRiskText, Text beta / Text. </div>
+                                </div>
+                                <div class="flex flex-wrap items-center justify-between gap-3">
+                                    <div>
+                                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Risk signal</div>
+                                        <div class="text-sm text-slate-500">Scan the main beta sensitivity first; use the table only when you need the drivers.</div>
+                                        <div class="text-xs text-slate-400 mt-1">Positive values tilt toward the factor; negative values tilt away from it.</div>
+                                    </div>
+                                    <div class="flex flex-wrap gap-2" role="tablist" aria-label="Exposure filters">
+                                        <template x-for="option in exposureFilterOptions()" :key="option.key">
+                                            <button type="button"
+                                                    class="px-3 py-1.5 rounded-lg border text-xs font-semibold"
+                                                    :class="exposureFilter === option.key ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'"
+                                                    @click="exposureFilter = option.key"
+                                                    x-text="option.label">
+                                            </button>
+                                        </template>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <template x-for="card in exposureRiskHighlights()" :key="card.key">
+                                        <div class="section-card-muted p-3">
+                                            <div class="metric-label" x-text="card.label"></div>
+                                            <div class="mt-1 text-base font-semibold text-slate-900" x-text="card.value"></div>
+                                            <div class="mt-1 text-xs text-slate-500" x-text="card.note"></div>
+                                        </div>
+                                    </template>
+                                </div>
+                                <div class="section-card-muted p-3" x-show="exposureWatchItems().length > 0">
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">What to watch</div>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                                        <template x-for="item in exposureWatchItems()" :key="item.key">
+                                            <div class="flex items-start gap-2 text-sm text-slate-700">
+                                                <span class="mt-1 h-1.5 w-1.5 rounded-full bg-slate-400 flex-none"></span>
+                                                <span x-text="item.text"></span>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+                                    <div class="lg:col-span-2">
+                                        <div class="relative h-48 md:h-64">
+                                            <canvas id="radarChart" class="w-full h-full" role="img" :aria-label="radarAriaLabel()"></canvas>
+                                        </div>
+                                    </div>
+                                    <div class="lg:col-span-3 overflow-x-auto">
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Text</div>
+                                        <table class="data-table">
+                                            <thead>
+                                                <tr>
+                                                    <th scope="col">Factor</th>
+                                                    <th scope="col">Type</th>
+                                                    <th scope="col" class="text-right">Text</th>
+                                                    <th scope="col">Read</th>
+                                                    <th scope="col">Drivers</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <template x-for="row in exposureRows()" :key="row.key">
+                                                    <tr>
+                                                        <td>
+                                                            <div class="font-medium text-slate-900" x-text="row.label"></div>
+                                                            <div class="text-xs text-slate-500" x-text="row.key"></div>
+                                                        </td>
+                                                        <td class="text-xs text-slate-500" x-text="row.typeLabel"></td>
+                                                        <td class="text-right numeric font-semibold" x-text="signed(row.value, 3)"></td>
+                                                        <td class="text-xs text-slate-600" x-text="row.bias"></td>
+                                                        <td class="text-xs text-slate-600" x-text="exposureRowDrivers(row)"></td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="section-card xl:col-span-6">
+                            <div class="section-header">
+                                <div>
+                                    <h2 class="section-title">Text</h2>
+                                    <p class="section-description">Text ETF Text. </p>
+                                </div>
+                            </div>
+                            <div class="section-body space-y-4">
+                                <template x-for="row in sectorRows()" :key="row.factor">
+                                    <div>
+                                        <div class="flex items-center justify-between gap-3">
+                                            <div>
+                                                <div class="font-semibold text-slate-900" x-text="row.label"></div>
+                                                <div class="text-xs text-slate-500 mt-1" x-text="row.desc"></div>
+                                            </div>
+                                            <div class="numeric font-semibold" x-text="signed(row.beta, 3)"></div>
+                                        </div>
+                                        <div class="mt-2 h-2 bg-slate-100 rounded-full overflow-hidden">
+                                            <div class="h-full rounded-full" :class="row.beta >= 0 ? 'bg-slate-800' : 'bg-rose-500'" :style="`width:${barWidth(row.beta)}%`"></div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Text -->
+                    <section class="section-card" x-show="(factorResult.correlation_matrix?.labels || []).length > 1">
+                        <div class="section-header">
+                            <div>
+                                <h2 class="section-title">Text</h2>
+                                <p class="section-description">HoldingsTextReturnText, Text=Text, Text=Text. </p>
+                            </div>
+                        </div>
+                        <div class="section-body overflow-x-auto">
+                            <table class="text-xs" :style="'border-collapse:collapse'">
+                                <thead>
+                                    <tr>
+                                        <th class="p-1"></th>
+                                        <template x-for="label in heatmapLabels()" :key="'hh-'+label">
+                                            <th scope="col" class="p-1 text-center font-medium text-slate-600" x-text="label" style="min-width:48px"></th>
+                                        </template>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="(row, ri) in heatmapRows()" :key="'hr-'+ri">
+                                        <tr>
+                                            <th scope="row" class="p-1 text-right font-medium text-slate-600 pr-2" x-text="heatmapLabels()[ri]"></th>
+                                            <template x-for="(val, ci) in row" :key="'hc-'+ri+'-'+ci">
+                                                <td class="p-1 text-center numeric rounded hover:ring-2 hover:ring-sky-500"
+                                                    :style="`background-color:${heatmapColor(val)};min-width:48px`"
+                                                    :title="`${heatmapLabels()[ri]} × ${heatmapLabels()[ci]}: ${val.toFixed(2)}`"
+                                                    :aria-label="`${heatmapLabels()[ri]} Text ${heatmapLabels()[ci]} Text ${val.toFixed(2)}`"
+                                                    x-text="val.toFixed(2)">
+                                                </td>
+                                            </template>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                            <div x-show="factorResult.correlation_matrix?.truncated" class="mt-3 text-center">
+                                <button class="text-sm text-sky-600" @click="showAllCorr = !showAllCorr" x-text="showAllCorr ? 'Text' : `Text ${factorResult.correlation_matrix?.n_holdings || 0} TextHoldings`"></button>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="section-card" x-show="(factorResult.correlation_matrix?.labels || []).length < 2 && factorResult.correlation_matrix">
+                        <div class="section-header"><div><h2 class="section-title">Text</h2></div></div>
+                        <div class="section-body"><div class="section-card-muted p-6 text-center text-sm text-slate-500">Text 2 TextHoldingsText</div></div>
+                    </section>
+
+                    <!-- ═══ ZONE 3: HoldingsText ═══ -->
+                    <div class="text-xs font-medium text-slate-400 uppercase tracking-widest mt-12">HoldingsText - TextHoldingsText?</div>
+
+                    <!-- TextRiskContributionText -->
+                    <section class="section-card" x-show="(factorResult.marginal_risk || []).length > 1">
+                        <div class="section-header">
+                            <div>
+                                <h2 class="section-title">TextRiskContribution</h2>
+                                <p class="section-description">TextRiskContributionWeight, Text, TextRiskText. </p>
+                            </div>
+                        </div>
+                        <div class="section-body">
+                            <div class="relative h-48 md:h-80">
+                                <canvas id="bubbleChart" class="w-full h-full" role="img" :aria-label="bubbleAriaLabel()"></canvas>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Text -->
+                    <section class="section-card" x-show="(factorResult.rolling_exposures || []).length > 0">
+                        <div class="section-body border-b border-slate-200">
+                            <div class="space-y-4">
+                                <div>
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-400">Text</div>
+                                    <div class="text-sm text-slate-500 mt-1">Text. </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    <template x-for="card in rollingExposureSummary()" :key="card.key">
+                                        <div class="section-card-muted p-3">
+                                            <div class="metric-label" x-text="card.label"></div>
+                                            <div class="mt-1 text-base font-semibold text-slate-900" x-text="card.value"></div>
+                                            <div class="mt-1 text-xs text-slate-500" x-text="card.note"></div>
+                                        </div>
+                                    </template>
+                                </div>
+                                <div class="overflow-x-auto">
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-2">Text</div>
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Factor</th>
+                                                <th scope="col" class="text-right">Now</th>
+                                                <th scope="col" class="text-right">Change</th>
+                                                <th scope="col">Direction</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <template x-for="row in rollingExposureRows()" :key="row.factor">
+                                                <tr>
+                                                    <td>
+                                                        <div class="font-medium text-slate-900" x-text="row.label"></div>
+                                                        <div class="text-xs text-slate-500" x-text="row.factor"></div>
+                                                    </td>
+                                                    <td class="text-right numeric" x-text="signed(row.current, 3)"></td>
+                                                    <td class="text-right numeric font-semibold" x-text="signed(row.change, 3)"></td>
+                                                    <td class="text-xs text-slate-600" x-text="row.direction"></td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="section-header">
+                            <div>
+                                <h2 class="section-title">Text</h2>
+                                <p class="section-description">63 TradeText, Text. </p>
+                            </div>
+                        </div>
+                        <div class="section-body">
+                            <div class="relative h-48 md:h-80">
+                                <canvas id="rollingChart" class="w-full h-full" role="img" aria-label="Text"></canvas>
+                            </div>
+                        </div>
+                    </section>
+                    <section class="section-card" x-show="(factorResult.rolling_exposures || []).length === 0 && factorResult.rolling_exposures !== undefined">
+                        <div class="section-header"><div><h2 class="section-title">Text</h2></div></div>
+                        <div class="section-body"><div class="section-card-muted p-6 text-center text-sm text-slate-500">HistoryText 63 TextTradeText, Text</div></div>
+                    </section>
+
+                    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+                        <section class="section-card xl:col-span-5">
+                            <div class="section-header">
+                                <div>
+                                    <h2 class="section-title">This WeekText</h2>
+                                    <p class="section-description">TextThis WeekTextLast WeekText, Text, TextRiskText. </p>
+                                </div>
+                            </div>
+                            <div class="section-body space-y-3">
+                                <template x-if="!(factorResult.exposure_change || {}).available">
+                                    <div class="text-sm text-slate-500" x-text="factorResult.exposure_change?.message || 'No dataTextLast WeekResult. '"></div>
+                                </template>
+                                <template x-if="(factorResult.exposure_change || {}).available">
+                                    <div class="space-y-3">
+                                        <template x-for="alert in (factorResult.exposure_change?.drift_alerts || [])" :key="alert">
+                                            <div class="alert-banner warn" x-text="alert"></div>
+                                        </template>
+                                        <template x-for="item in (factorResult.exposure_change?.holdings || []).slice(0, 5)" :key="item.stock_id">
+                                            <div class="flex items-center justify-between gap-3 border border-slate-200 rounded-xl px-4 py-3">
+                                                <div class="font-medium text-slate-900" x-text="item.stock_id"></div>
+                                                <div class="numeric font-semibold" x-text="formatPct(item.weight_change * 100, 2)"></div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </section>
+
+                        <section class="section-card xl:col-span-7">
+                            <div class="section-header">
+                                <div>
+                                    <h2 class="section-title">TextContributionHoldings</h2>
+                                    <p class="section-description">TextHoldingsText, TextHoldingsText / Text. </p>
+                                </div>
+                            </div>
+                            <div class="section-body grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <template x-for="group in contributorGroups()" :key="group.title">
+                                    <div class="section-card-muted p-4">
+                                        <div class="font-semibold text-slate-900" x-text="group.title"></div>
+                                        <div class="text-xs text-slate-500 mt-1" x-text="group.subtitle"></div>
+                                        <div class="mt-3 space-y-2">
+                                            <template x-for="row in group.rows" :key="group.title + row.stock_id">
+                                                <div class="flex items-center justify-between gap-3 rounded-xl bg-white border border-slate-200 px-3 py-2">
+                                                    <div>
+                                                        <div class="font-medium text-slate-900" x-text="row.stock_name"></div>
+                                                        <div class="text-xs text-slate-500" x-text="row.stock_id"></div>
+                                                    </div>
+                                                    <div class="text-right">
+                                                        <div class="numeric font-semibold" x-text="signed(row.contribution, 4)"></div>
+                                                        <div class="text-xs text-slate-500" x-text="`Text ${formatPct(row.weight * 100, 1)}`"></div>
+                                                    </div>
+                                                </div>
+                                            </template>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </section>
+                    </div>
+
+                    <section class="section-card">
+                        <div class="section-header">
+                            <div>
+                                <h2 class="section-title">HoldingsText</h2>
+                                <p class="section-description">TextHoldingsText, Text, TextCurrentText. </p>
+                            </div>
+                        </div>
+                        <div class="section-body grid grid-cols-1 xl:grid-cols-2 gap-6">
+                            <div>
+                                <h3 class="text-sm font-semibold text-slate-800 mb-3">TextHoldings</h3>
+                                <div class="overflow-x-auto">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Ticker</th>
+                                                <th>Text</th>
+                                                <th class="text-right">Text</th>
+                                                <th class="text-right">Text</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <template x-for="item in usHoldings" :key="item.stock_id">
+                                                <tr>
+                                                    <td class="numeric" x-text="item.stock_id"></td>
+                                                    <td x-text="item.stock_name"></td>
+                                                    <td class="text-right numeric" x-text="formatPct(item.weight * 100, 1)"></td>
+                                                    <td class="text-right numeric" x-text="formatMoney(item.pnl)"></td>
+                                                </tr>
+                                            </template>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-semibold text-slate-800 mb-3">TextAnalysisTextHoldings</h3>
+                                <div class="space-y-3" x-show="nonUsHoldings.length > 0">
+                                    <template x-for="item in nonUsHoldings" :key="item.stock_id">
+                                        <div class="alert-banner warn">
+                                            <div class="font-semibold text-slate-900" x-text="item.stock_name"></div>
+                                            <div class="text-xs mt-1" x-text="`${item.stock_id} · ${item.market_label}`"></div>
+                                        </div>
+                                    </template>
+                                </div>
+                                <div x-show="nonUsHoldings.length === 0" class="text-sm text-slate-500">CurrentHoldingsText / Text ETF / ADR. </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+            </template>
+        </div>
+    </div>
+</div>
+
+<script async src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/pages/portfolio_analysis.js') }}"></script>
+{% endblock %}

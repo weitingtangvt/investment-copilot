@@ -1,0 +1,2271 @@
+{% extends "base.html" %}
+
+{% block title %}Sell Decision Review - Investment Assistant{% endblock %}
+
+{% block content %}
+
+
+<div x-data="decisionReviewPage()" x-init="init()" class="decision-review-shell space-y-5">
+    <div class="page-header">
+        <div>
+            <div class="page-kicker">Sell Decision Review / Text 2026-W05 Text</div>
+            <h1 class="page-title">Sell Decision Review</h1>
+            <p class="page-subtitle">TextWeekly ReviewTextBuyTextSellText, Text, Text, CashText. </p>
+        </div>
+    </div>
+
+    <section x-show="loading" class="section-card loading-state">
+        <div class="section-body py-10 text-center text-sm text-slate-500">TextWeekly ReviewTextSell Decision Review...</div>
+    </section>
+
+    <section x-show="error && !loading" class="section-card error-state">
+        <div class="section-body py-8 text-center">
+            <h2 class="text-xl font-semibold text-slate-900">CurrentTextLoadSell Decision Review</h2>
+            <p class="mt-2 text-sm text-slate-500" x-text="error"></p>
+        </div>
+    </section>
+
+    <div x-show="!loading && !error" class="space-y-5">
+        <section class="decision-review-kpi-strip grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+            <article class="metric-card">
+                <div class="metric-label">SellText</div>
+                <div class="metric-value numeric" x-text="summary.event_count || 0"></div>
+                <div class="mt-1 text-xs text-slate-500">W5 TextSell</div>
+            </article>
+            <article class="metric-card">
+                <div class="metric-label">Opportunity Cost</div>
+                <div class="metric-value numeric text-red-700" x-text="formatSignedMoney(-(summary.total_opportunity_cost || 0))"></div>
+                <div class="mt-1 text-xs text-slate-500">Text</div>
+            </article>
+            <article class="metric-card">
+                <div class="metric-label">SellContribution</div>
+                <div class="metric-value numeric text-emerald-700" x-text="formatSignedMoney(summary.total_value_added || 0)"></div>
+                <div class="mt-1 text-xs text-slate-500">Sell/Text</div>
+            </article>
+            <article class="metric-card">
+                <div class="metric-label">TextResult</div>
+                <div class="metric-value numeric" :class="netContribution() >= 0 ? 'text-emerald-700' : 'text-red-700'" x-text="formatSignedMoney(netContribution())"></div>
+                <div class="mt-1 text-xs text-slate-500">TextSellText</div>
+            </article>
+            <article class="metric-card">
+                <div class="metric-label">Text</div>
+                <div class="metric-value numeric" x-text="formatPercent(summary.effectiveness_rate)"></div>
+                <div class="mt-1 text-xs text-slate-500" x-text="`${summary.effective_count || 0}/${summary.evaluated_count || 0} Text`"></div>
+            </article>
+        </section>
+
+        <section class="section-card decision-review-main">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Counterfactual Review</h2>
+                    <p class="section-description">TextStatus, TextTradeText. </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <div class="dr-segmented control-cluster inline-flex rounded-lg border p-1 text-sm">
+                        <button type="button" class="rounded-md px-3 py-1.5 font-medium" :class="windowMode === 'single_week' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'" @click="setWindowMode('single_week')">Single week</button>
+                        <button type="button" class="rounded-md px-3 py-1.5 font-medium" :class="windowMode === 'auto' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'" @click="setWindowMode('auto')">Auto batch</button>
+                    </div>
+                    <div class="dr-segmented control-cluster inline-flex rounded-lg border p-1 text-sm">
+                        <template x-for="option in markHorizonOptions" :key="option.key">
+                            <button type="button" class="rounded-md px-3 py-1.5 font-medium" :class="selectedMark === option.key ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50'" @click="setSelectedMark(option.key)" x-text="option.label"></button>
+                        </template>
+                    </div>
+                </div>
+            </div>
+            <div class="section-body grid grid-cols-1 gap-5 xl:grid-cols-[340px_minmax(0,1fr)]">
+                <div class="space-y-3">
+                    <template x-for="window in decisionWindows()" :key="window.window_id">
+                        <button type="button" class="dr-window-card w-full rounded-lg border px-4 py-3 text-left hover:bg-slate-50" :class="selectedWindow?.window_id === window.window_id ? 'is-selected' : ''" @click="selectWindow(window)">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="font-semibold text-slate-900" x-text="window.title"></div>
+                                <div class="numeric text-sm font-semibold" :class="signedTone(window.decision_net_hkd || 0)" x-text="formatSignedMoney(window.decision_net_hkd || 0)"></div>
+                            </div>
+                            <div class="mt-1 text-xs text-slate-500" x-text="window.headline"></div>
+                            <div class="mt-1 text-xs text-slate-500" x-text="(window.week_ids || []).join(' / ')"></div>
+                            <div class="mt-2">
+                                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium" :class="windowStateTone(window)" x-text="windowStateLabel(window)"></span>
+                                <span class="ml-2 inline-flex rounded-full px-2.5 py-1 text-xs font-medium bg-slate-100 text-slate-700" x-text="universeLabel(window.winner_key)"></span>
+                            </div>
+                        </button>
+                    </template>
+                    <div class="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-3" x-show="checkpointWindows().length">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Checkpoint Windows / Text</div>
+                        <div class="mt-1 text-xs text-slate-500">TextConfirmTextHoldingsTextCashText, TextSellText. </div>
+                        <div class="mt-3 space-y-2">
+                            <template x-for="window in checkpointWindows()" :key="`checkpoint-${window.window_id}`">
+                                <button type="button" class="dr-window-card w-full rounded-md border px-3 py-2 text-left text-sm hover:bg-slate-50" :class="selectedWindow?.window_id === window.window_id ? 'is-selected' : ''" @click="selectWindow(window)">
+                                    <div class="font-medium text-slate-800" x-text="window.title"></div>
+                                    <div class="mt-1 text-xs text-slate-500" x-text="(window.week_ids || []).join(' / ')"></div>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+                <div class="dr-window-detail rounded-lg border p-4" x-show="selectedWindow">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <div class="text-2xl font-semibold text-slate-900" x-text="selectedWindow?.title || ''"></div>
+                            <div class="mt-1 text-sm text-slate-500" x-text="selectedWindow?.headline || ''"></div>
+                            <div class="mt-1 text-xs text-slate-500" x-text="(selectedWindow?.week_ids || []).join(' / ')"></div>
+                            <div class="mt-1 text-xs text-slate-500" x-text="selectedMarkDate(selectedWindow)"></div>
+                            <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                                <span class="inline-flex rounded-full px-2.5 py-1 font-medium" :class="dataQualityTone(selectedWindow?.data_quality)" x-text="dataQualityLabel(selectedWindow?.data_quality)"></span>
+                                <span class="text-slate-500" x-text="dataQualitySummary(selectedWindow?.data_quality)"></span>
+                            </div>
+                            <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                                <span class="inline-flex rounded-full px-2.5 py-1 font-medium" :class="actualBasisTone(selectedWindowMark(selectedWindow)?.actual_basis)" x-text="actualBasisLabel(selectedWindowMark(selectedWindow)?.actual_basis)"></span>
+                                <span class="text-slate-500" x-text="actualBasisHelp(selectedWindowMark(selectedWindow)?.actual_basis)"></span>
+                            </div>
+                            <div class="mt-3 space-y-1 text-sm text-slate-600">
+                                <template x-for="line in (selectedWindowMark(selectedWindow)?.explanation_lines || [])" :key="line">
+                                    <div x-text="line"></div>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-slate-500">TextResult</div>
+                            <div class="numeric text-xl font-semibold" :class="signedTone(selectedWindowMark(selectedWindow)?.decision_net_hkd || 0)" x-text="formatSignedMoney(selectedWindowMark(selectedWindow)?.decision_net_hkd || 0)"></div>
+                            <div class="mt-1 text-xs text-slate-500" x-text="`Best gap ${formatSignedMoney(selectedWindowMark(selectedWindow)?.best_gap_vs_actual_hkd || 0)}`"></div>
+                        </div>
+                    </div>
+                    <div class="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-4">
+                        <template x-for="path in (selectedWindowMark(selectedWindow)?.end_states || [])" :key="`window-state-${path.key}`">
+                            <div class="dr-end-state rounded-lg border p-3" :class="path.key === selectedWindowMark(selectedWindow)?.winner_key ? 'is-winner' : ''">
+                                <div class="flex items-center justify-between gap-2">
+                                    <div class="text-sm font-semibold text-slate-900" x-text="path.label"></div>
+                                    <span class="rounded-full px-2 py-1 text-[11px] font-medium" :class="path.is_actual ? 'bg-slate-900 text-white' : (path.key === selectedWindowMark(selectedWindow)?.winner_key ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600')" x-text="path.is_actual ? 'actual' : (path.key === selectedWindowMark(selectedWindow)?.winner_key ? 'winner' : 'alt')"></span>
+                                </div>
+                                <div class="mt-3 text-xs text-slate-500">Final value</div>
+                                <div class="numeric text-lg font-semibold text-slate-900" x-text="formatMoney(path.final_value_hkd)"></div>
+                                <div class="mt-2 grid grid-cols-2 gap-2 text-xs">
+                                    <div>
+                                        <div class="text-slate-500">Cost basis</div>
+                                        <div class="numeric font-semibold text-slate-900" x-text="formatMoney(path.capital_hkd)"></div>
+                                    </div>
+                                    <div>
+                                        <div class="text-slate-500">Return</div>
+                                        <div class="numeric font-semibold" :class="signedTone(path.return_pct || 0)" x-text="path.return_pct === null || path.return_pct === undefined ? '--' : formatPercent(path.return_pct)"></div>
+                                    </div>
+                                    <div>
+                                        <div class="text-slate-500">P/L</div>
+                                        <div class="numeric font-semibold" :class="signedTone(path.pnl_hkd || 0)" x-text="path.pnl_hkd === null || path.pnl_hkd === undefined ? '--' : formatSignedMoney(path.pnl_hkd)"></div>
+                                    </div>
+                                    <div>
+                                        <div class="text-slate-500">vs actual</div>
+                                        <div class="numeric font-semibold" :class="signedTone(path.vs_actual_hkd || 0)" x-text="path.is_actual ? 'baseline' : (path.vs_actual_hkd === null || path.vs_actual_hkd === undefined ? '--' : formatSignedMoney(path.vs_actual_hkd))"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                    <div class="mt-4 grid grid-cols-1 gap-3 lg:grid-cols-2" x-show="selectedWindow?.data_state !== 'checkpoint'">
+                        <div class="rounded-lg border border-slate-200 bg-white p-3">
+                            <div class="text-sm font-semibold text-slate-900">Text</div>
+                            <div class="mt-1 text-xs text-slate-500">Text FIFO TextSellTextBuy, TextRisk. </div>
+                            <div class="mt-3 grid grid-cols-3 gap-2 text-xs">
+                                <div>
+                                    <div class="text-slate-500">Matched amount</div>
+                                    <div class="numeric font-semibold text-slate-900" x-text="formatMoney(selectedWindow?.decision_attribution?.matching_summary?.matched_amount_hkd || 0)"></div>
+                                </div>
+                                <div>
+                                    <div class="text-slate-500">Unmatched</div>
+                                    <div class="numeric font-semibold" :class="(selectedWindow?.decision_attribution?.matching_summary?.unmatched_amount_hkd || 0) > 0 ? 'text-amber-700' : 'text-slate-900'" x-text="formatMoney(selectedWindow?.decision_attribution?.matching_summary?.unmatched_amount_hkd || 0)"></div>
+                                </div>
+                                <div>
+                                    <div class="text-slate-500">Coverage</div>
+                                    <div class="numeric font-semibold text-slate-900" x-text="formatPercent(selectedWindow?.decision_attribution?.matching_summary?.coverage_ratio)"></div>
+                                </div>
+                            </div>
+                            <div class="fund-flow-mini-table mt-3 overflow-x-auto" x-show="(selectedWindow?.fund_flow?.targets || []).length">
+                                <table class="dr-table min-w-full text-xs">
+                                    <thead class="bg-slate-50">
+                                        <tr>
+                                            <th class="px-2 py-2 text-left font-medium text-slate-600">Stock</th>
+                                            <th class="px-2 py-2 text-right font-medium text-slate-600">Capital</th>
+                                            <th class="px-2 py-2 text-right font-medium text-slate-600">P/L</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        <template x-for="row in (selectedWindow?.fund_flow?.targets || [])" :key="`window-flow-${row.week_id}-${row.stock_id}`">
+                                            <tr>
+                                                <td class="px-2 py-2 font-medium text-slate-900" x-text="row.stock_name || row.stock_id"></td>
+                                                <td class="px-2 py-2 text-right numeric text-slate-700" x-text="formatMoney(row.allocated_amount_hkd || 0)"></td>
+                                                <td class="px-2 py-2 text-right numeric font-semibold" :class="signedTone(row.pnl_hkd || 0)" x-text="formatSignedMoney(row.pnl_hkd || 0)"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-3 rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500" x-show="!(selectedWindow?.fund_flow?.targets || []).length">TextBuy; TextCashText fallback Text. </div>
+                        </div>
+                        <div class="rounded-lg border border-slate-200 bg-white p-3">
+                            <div class="text-sm font-semibold text-slate-900">Two-stage Attribution</div>
+                            <div class="mt-1 text-xs text-slate-500">Separates sell timing from redeployment quality.</div>
+                            <div class="effect-bar mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-3">
+                                <div class="rounded-md bg-slate-50 p-2">
+                                    <div class="text-slate-500">Sell timing effect</div>
+                                    <div class="numeric font-semibold" :class="signedTone(selectedWindowMark(selectedWindow)?.stage_attribution?.sell_timing_hkd || 0)" x-text="formatSignedMoney(selectedWindowMark(selectedWindow)?.stage_attribution?.sell_timing_hkd)"></div>
+                                </div>
+                                <div class="rounded-md bg-slate-50 p-2">
+                                    <div class="text-slate-500">Redeploy effect</div>
+                                    <div class="numeric font-semibold" :class="signedTone(selectedWindowMark(selectedWindow)?.stage_attribution?.redeploy_effect_hkd || 0)" x-text="formatSignedMoney(selectedWindowMark(selectedWindow)?.stage_attribution?.redeploy_effect_hkd)"></div>
+                                </div>
+                                <div class="rounded-md bg-slate-50 p-2">
+                                    <div class="text-slate-500">Net result</div>
+                                    <div class="numeric font-semibold" :class="signedTone(selectedWindowMark(selectedWindow)?.stage_attribution?.net_result_hkd || 0)" x-text="formatSignedMoney(selectedWindowMark(selectedWindow)?.stage_attribution?.net_result_hkd)"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 rounded-lg border border-slate-200 bg-white p-3" x-show="benchmarkPortfolioContributors(selectedWindow).length">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <div class="text-sm font-semibold text-slate-900">Week-end Portfolio Drivers</div>
+                                <div class="mt-1 text-xs text-slate-500">Top contributors behind the sell-amount-into-week-end-portfolio path.</div>
+                            </div>
+                            <div class="text-xs text-slate-500" x-text="`${benchmarkPortfolioContributors(selectedWindow).length} shown`"></div>
+                        </div>
+                        <div class="mt-3 overflow-x-auto">
+                            <table class="dr-table min-w-full text-sm">
+                                <thead class="bg-slate-50">
+                                    <tr>
+                                        <th class="px-3 py-2 text-left font-medium text-slate-600">Stock</th>
+                                        <th class="px-3 py-2 text-right font-medium text-slate-600">Weight</th>
+                                        <th class="px-3 py-2 text-right font-medium text-slate-600">Return</th>
+                                        <th class="px-3 py-2 text-right font-medium text-slate-600">Contribution</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <template x-for="row in benchmarkPortfolioContributors(selectedWindow)" :key="`weekend-driver-${row.stock_id}`">
+                                        <tr>
+                                            <td class="px-3 py-2 font-medium text-slate-900" x-text="row.stock_name || row.stock_id"></td>
+                                            <td class="px-3 py-2 text-right numeric text-slate-700" x-text="formatPercent(row.weight)"></td>
+                                            <td class="px-3 py-2 text-right numeric font-semibold" :class="signedTone(row.return || 0)" x-text="formatPercent(row.return)"></td>
+                                            <td class="px-3 py-2 text-right numeric font-semibold" :class="signedTone(row.contribution_pnl_hkd || 0)" x-text="formatSignedMoney(row.contribution_pnl_hkd || 0)"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <details class="mt-4 rounded-lg border border-slate-200 bg-white p-3">
+                        <summary class="cursor-pointer text-sm font-semibold text-slate-700">Details: holdings, attribution, path chart</summary>
+                        <div class="mt-4" x-show="selectedBatch">
+                    <div class="mt-4 space-y-4">
+                        <div class="rounded-lg border border-slate-200 bg-white p-4">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Decision Summary</div>
+                                    <div class="mt-2">
+                                        <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium" :class="verdictTagTone(selectedBatch?.decision_summary?.verdict_tag)" x-text="verdictTagLabel(selectedBatch?.decision_summary?.verdict_tag)"></span>
+                                    </div>
+                                    <div class="mt-1 text-base font-semibold text-slate-900" x-text="selectedBatch?.decision_summary?.headline || '--'"></div>
+                                    <div class="mt-1 text-sm text-slate-500" x-text="selectedBatch?.decision_summary?.phase_flow || '--'"></div>
+                                    <div class="mt-2 space-y-1 text-sm text-slate-600">
+                                        <template x-for="line in (selectedBatch?.decision_summary?.explanation_lines || [])" :key="line">
+                                            <div x-text="line"></div>
+                                        </template>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 gap-2 text-right text-sm md:grid-cols-2">
+                                    <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                                        <div class="text-[11px] uppercase tracking-wide text-slate-500">Best alternative</div>
+                                        <div class="mt-1 font-semibold text-slate-900" x-text="universeLabel(selectedBatch?.decision_summary?.best_alternative_key)"></div>
+                                        <div class="mt-1 numeric text-xs" :class="signedTone(selectedBatch?.decision_summary?.best_alternative_diff_hkd || 0)" x-text="formatSignedMoney(selectedBatch?.decision_summary?.best_alternative_diff_hkd || 0)"></div>
+                                    </div>
+                                    <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                                        <div class="text-[11px] uppercase tracking-wide text-slate-500">Weakest stage</div>
+                                        <div class="mt-1 font-semibold text-slate-900" x-text="stageLabel(selectedBatch?.decision_summary?.weakest_stage_key)"></div>
+                                        <div class="mt-1 text-xs text-slate-500" x-text="diagnosisLabel(selectedBatch?.primary_issue)"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rounded-lg border border-slate-200 bg-white p-4">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Holdings Change</div>
+                                    <div class="mt-1 text-sm text-slate-500">TextDecisionTextHoldingsText, Text. Recorded changes inside this decision batch, grouped by action week.</div>
+                                </div>
+                                <div class="text-xs text-slate-500" x-text="`${holdingChangeCount(selectedBatch?.changes)} changed`"></div>
+                            </div>
+                            <div class="mt-3 overflow-x-auto" x-show="holdingChangeRows(selectedBatch?.changes).length">
+                                <table class="dr-table min-w-full text-sm">
+                                    <thead class="bg-slate-50">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left font-medium text-slate-600">Action week</th>
+                                            <th class="px-3 py-2 text-left font-medium text-slate-600">Change</th>
+                                            <th class="px-3 py-2 text-left font-medium text-slate-600">Stock</th>
+                                            <th class="px-3 py-2 text-right font-medium text-slate-600">Before</th>
+                                            <th class="px-3 py-2 text-right font-medium text-slate-600">After</th>
+                                            <th class="px-3 py-2 text-right font-medium text-slate-600">Delta</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        <template x-for="row in holdingChangeRows(selectedBatch?.changes)" :key="`batch-change-${row.bucket}-${row.stock_id}`">
+                                            <tr>
+                                                <td class="px-3 py-2 numeric text-slate-700" x-text="row.week_id || '--'"></td>
+                                                <td class="px-3 py-2"><span class="inline-flex rounded-full px-2 py-1 text-xs font-medium" :class="holdingChangeTone(row.bucket)" x-text="holdingChangeLabel(row.bucket)"></span></td>
+                                                <td class="px-3 py-2 font-medium text-slate-900" x-text="row.stock_name || row.stock_id"></td>
+                                                <td class="px-3 py-2 text-right numeric text-slate-700" x-text="formatShares(row.before_shares)"></td>
+                                                <td class="px-3 py-2 text-right numeric text-slate-700" x-text="formatShares(row.after_shares)"></td>
+                                                <td class="px-3 py-2 text-right numeric font-semibold" :class="signedTone(row.delta_shares || 0)" x-text="formatSignedShares(row.delta_shares)"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-3 rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500" x-show="!holdingChangeRows(selectedBatch?.changes).length">TextSharesText. </div>
+                        </div>
+                        <div class="rounded-lg border border-slate-200 bg-white p-4">
+                            <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Path Comparison</div>
+                            <div class="mt-1 text-sm text-slate-500">TextDecisionTextTrade, SellTextCash, Text, Text; Text. Positive means the alternative beat what actually happened.</div>
+                            <div class="mt-3 overflow-x-auto">
+                                <table class="dr-table min-w-full text-sm">
+                                    <thead class="bg-slate-50">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left font-medium text-slate-600">Path</th>
+                                            <th class="px-3 py-2 text-right font-medium text-slate-600">Value now</th>
+                                            <th class="px-3 py-2 text-right font-medium text-slate-600">Return</th>
+                                            <th class="px-3 py-2 text-right font-medium text-slate-600">Alternative vs actual</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        <template x-for="row in universeRows(selectedBatch?.counterfactuals)" :key="`batch-universe-${row.key}`">
+                                            <tr>
+                                                <td class="px-3 py-2 font-medium text-slate-900" x-text="row.label"></td>
+                                                <td class="px-3 py-2 text-right numeric text-slate-900" x-text="formatMoney(row.current_total_hkd || 0)"></td>
+                                                <td class="px-3 py-2 text-right numeric text-slate-700" x-text="formatPercent(row.return_pct)"></td>
+                                                <td class="px-3 py-2 text-right numeric font-semibold" :class="signedTone(row.vs_actual_hkd || 0)" x-text="row.key === 'actual_redeploy' ? 'baseline' : formatSignedMoney(row.vs_actual_hkd || 0)"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="rounded-lg border border-slate-200 bg-white p-4" x-show="(selectedBatch?.path_attribution?.actual_redeploy || []).length || (selectedBatch?.path_attribution?.hold_original || []).length">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Path Attribution</div>
+                                    <div class="mt-1 text-sm text-slate-500">TextStockTextP&LText. </div>
+                                </div>
+                            </div>
+                            <div class="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                                <div>
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Actual buys</div>
+                                    <div class="mt-2 overflow-x-auto">
+                                        <table class="dr-table min-w-full text-sm">
+                                            <thead class="bg-slate-50">
+                                                <tr>
+                                                    <th class="px-3 py-2 text-left font-medium text-slate-600">Week</th>
+                                                    <th class="px-3 py-2 text-left font-medium text-slate-600">Stock</th>
+                                                    <th class="px-3 py-2 text-right font-medium text-slate-600">Capital</th>
+                                                    <th class="px-3 py-2 text-right font-medium text-slate-600">P/L</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-100">
+                                                <template x-for="row in (selectedBatch?.path_attribution?.actual_redeploy || [])" :key="`actual-attr-${row.week_id}-${row.stock_id}`">
+                                                    <tr>
+                                                        <td class="px-3 py-2 numeric text-slate-700" x-text="row.week_id || '--'"></td>
+                                                        <td class="px-3 py-2 font-medium text-slate-900" x-text="row.stock_id"></td>
+                                                        <td class="px-3 py-2 text-right numeric text-slate-700" x-text="formatMoney(row.allocated_amount_hkd || 0)"></td>
+                                                        <td class="px-3 py-2 text-right numeric font-semibold" :class="signedTone(row.pnl_hkd || 0)" x-text="formatSignedMoney(row.pnl_hkd || 0)"></td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">If held sold names</div>
+                                    <div class="mt-2 overflow-x-auto">
+                                        <table class="dr-table min-w-full text-sm">
+                                            <thead class="bg-slate-50">
+                                                <tr>
+                                                    <th class="px-3 py-2 text-left font-medium text-slate-600">Week</th>
+                                                    <th class="px-3 py-2 text-left font-medium text-slate-600">Stock</th>
+                                                    <th class="px-3 py-2 text-right font-medium text-slate-600">Capital</th>
+                                                    <th class="px-3 py-2 text-right font-medium text-slate-600">P/L</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-100">
+                                                <template x-for="row in (selectedBatch?.path_attribution?.hold_original || [])" :key="`hold-attr-${row.week_id}-${row.stock_id}`">
+                                                    <tr>
+                                                        <td class="px-3 py-2 numeric text-slate-700" x-text="row.week_id || '--'"></td>
+                                                        <td class="px-3 py-2 font-medium text-slate-900" x-text="row.stock_id"></td>
+                                                        <td class="px-3 py-2 text-right numeric text-slate-700" x-text="formatMoney(row.allocated_amount_hkd || 0)"></td>
+                                                        <td class="px-3 py-2 text-right numeric font-semibold" :class="signedTone(row.pnl_hkd || 0)" x-text="formatSignedMoney(row.pnl_hkd || 0)"></td>
+                                                    </tr>
+                                                </template>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="rounded-lg border border-slate-200 bg-white p-4">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Counterfactual Path</div>
+                                    <div class="mt-1 text-sm text-slate-500">DefaultText, Text. </div>
+                                </div>
+                                <button type="button" class="btn-ghost !min-h-9 !px-3 !py-2 text-xs" x-show="(selectedBatch?.counterfactual_timeline || []).length > timelineKeyPoints(selectedBatch?.counterfactual_timeline || []).length" @click="toggleTimeline('batch')">
+                                    <span x-text="showFullTimeline.batch ? 'Text' : 'Text'"></span>
+                                </button>
+                            </div>
+                            <div class="dr-chart-panel mt-4 rounded-lg border border-slate-200 p-3">
+                                <div class="flex flex-wrap items-center justify-between gap-3">
+                                    <div class="flex flex-wrap gap-3 text-[11px] text-slate-500">
+                                        <span class="inline-flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full bg-slate-900"></span>Actual</span>
+                                        <span class="inline-flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full bg-blue-500"></span>Hold</span>
+                                        <span class="inline-flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span>Cash</span>
+                                        <span class="inline-flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>Rebuy</span>
+                                    </div>
+                                    <div class="inline-flex rounded-lg border border-slate-200 bg-white p-1 text-xs">
+                                        <button type="button" class="rounded-md px-2.5 py-1" :class="timelineChartMode === 'absolute' ? 'bg-slate-900 text-white' : 'text-slate-600'" @click="setTimelineChartMode('absolute')">absolute HKD</button>
+                                        <button type="button" class="rounded-md px-2.5 py-1" :class="timelineChartMode === 'normalized' ? 'bg-slate-900 text-white' : 'text-slate-600'" @click="setTimelineChartMode('normalized')">normalized return</button>
+                                    </div>
+                                    <div class="text-xs text-slate-500" x-text="timelineDivergencePoint(selectedBatch?.counterfactual_timeline || [])?.label ? `Text ${timelineDivergencePoint(selectedBatch?.counterfactual_timeline || []).label}` : 'No dataText'"></div>
+                                </div>
+                                <div class="mt-3 h-44 w-full">
+                                    <svg viewBox="0 0 760 176" class="h-full w-full overflow-visible">
+                                        <line x1="24" y1="152" x2="736" y2="152" stroke="#d8dee8" stroke-width="1"></line>
+                                        <path :d="timelineGapAreaD(selectedBatch?.counterfactual_timeline || [])" fill="rgba(183, 71, 71, 0.12)" stroke="none"></path>
+                                        <path :d="timelinePathForKey(selectedBatch?.counterfactual_timeline || [], 'actual_redeploy')" fill="none" stroke="#15212b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                                        <path :d="timelinePathForKey(selectedBatch?.counterfactual_timeline || [], 'hold_original')" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"></path>
+                                        <path :d="timelinePathForKey(selectedBatch?.counterfactual_timeline || [], 'sell_to_cash')" fill="none" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"></path>
+                                        <path :d="timelinePathForKey(selectedBatch?.counterfactual_timeline || [], 'rebuy_original_leaders')" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"></path>
+                                        <template x-if="timelineDivergencePoint(selectedBatch?.counterfactual_timeline || [])">
+                                            <g>
+                                                <line :x1="timelineX(timelineDivergencePoint(selectedBatch?.counterfactual_timeline || []).index, (selectedBatch?.counterfactual_timeline || []).length)" y1="18" :x2="timelineX(timelineDivergencePoint(selectedBatch?.counterfactual_timeline || []).index, (selectedBatch?.counterfactual_timeline || []).length)" y2="152" stroke="#b74747" stroke-dasharray="4 4" stroke-width="1.5"></line>
+                                                <circle :cx="timelineX(timelineDivergencePoint(selectedBatch?.counterfactual_timeline || []).index, (selectedBatch?.counterfactual_timeline || []).length)" :cy="timelineY(timelineDivergencePoint(selectedBatch?.counterfactual_timeline || []).actual, timelineChartRange(selectedBatch?.counterfactual_timeline || []).min, timelineChartRange(selectedBatch?.counterfactual_timeline || []).max)" r="4" fill="#b74747"></circle>
+                                            </g>
+                                        </template>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                                <template x-for="row in timelineDisplayRows(selectedBatch?.counterfactual_timeline || [], 'batch')" :key="`batch-path-card-${row.label}`">
+                                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                        <div class="flex items-start justify-between gap-2">
+                                            <div>
+                                                <div class="text-sm font-semibold text-slate-900" x-text="row.label"></div>
+                                                <div class="mt-1 text-[11px] uppercase tracking-wide text-slate-500" x-text="row.week_id || row.date"></div>
+                                            </div>
+                                            <span class="inline-flex rounded-full px-2 py-1 text-[11px] font-medium" :class="verdictTagTone(row.leader_key === 'actual_redeploy' ? 'actual_best' : 'hold_would_win')" x-text="universeShortLabel(row.leader_key)"></span>
+                                        </div>
+                                        <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
+                                            <div>
+                                                <div class="text-slate-500">Actual</div>
+                                                <div class="mt-1 numeric font-semibold text-slate-900" x-text="formatMoney(timelineUniverseValue(row, 'actual_redeploy'))"></div>
+                                            </div>
+                                            <div>
+                                                <div class="text-slate-500">Best gap</div>
+                                                <div class="mt-1 numeric font-semibold" :class="signedTone(timelineSpreadVsBest(row))" x-text="formatSignedMoney(timelineSpreadVsBest(row))"></div>
+                                            </div>
+                                            <div>
+                                                <div class="text-slate-500">Hold</div>
+                                                <div class="mt-1 numeric text-slate-700" x-text="formatMoney(timelineUniverseValue(row, 'hold_original'))"></div>
+                                            </div>
+                                            <div>
+                                                <div class="text-slate-500">Cash / Rebuy</div>
+                                                <div class="mt-1 numeric text-slate-700" x-text="`${formatMoney(timelineUniverseValue(row, 'sell_to_cash'))} / ${formatMoney(timelineUniverseValue(row, 'rebuy_original_leaders'))}`"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="mt-4 overflow-x-auto" x-show="showFullTimeline.batch">
+                                <table class="dr-table min-w-full text-sm">
+                                    <thead class="bg-slate-50">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left font-medium text-slate-600">Point</th>
+                                            <th class="px-3 py-2 text-right font-medium text-slate-600">Actual</th>
+                                            <th class="px-3 py-2 text-right font-medium text-slate-600">Hold</th>
+                                            <th class="px-3 py-2 text-right font-medium text-slate-600">Cash</th>
+                                            <th class="px-3 py-2 text-right font-medium text-slate-600">Rebuy</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        <template x-for="row in (selectedBatch?.counterfactual_timeline || [])" :key="`batch-path-${row.label}`">
+                                            <tr>
+                                                <td class="px-3 py-2 font-medium text-slate-900" x-text="row.label"></td>
+                                                <td class="px-3 py-2 text-right numeric text-slate-900" x-text="formatMoney(row?.universes?.actual_redeploy?.current_total_hkd || 0)"></td>
+                                                <td class="px-3 py-2 text-right numeric text-slate-700" x-text="formatMoney(row?.universes?.hold_original?.current_total_hkd || 0)"></td>
+                                                <td class="px-3 py-2 text-right numeric text-slate-700" x-text="formatMoney(row?.universes?.sell_to_cash?.current_total_hkd || 0)"></td>
+                                                <td class="px-3 py-2 text-right numeric text-slate-700" x-text="formatMoney(row?.universes?.rebuy_original_leaders?.current_total_hkd || 0)"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_320px]">
+                            <div class="rounded-lg border border-slate-200 bg-white p-4">
+                                <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Stage Breakdown</div>
+                                <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+                                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                        <div class="text-xs text-slate-500">Sell judgment</div>
+                                        <div class="mt-1 numeric text-lg font-semibold" :class="signedTone(selectedBatch?.stage_breakdown?.sell_judgment_hkd || 0)" x-text="formatSignedMoney(selectedBatch?.stage_breakdown?.sell_judgment_hkd || 0)"></div>
+                                    </div>
+                                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                        <div class="text-xs text-slate-500">Cash ledger</div>
+                                        <div class="mt-1 numeric text-lg font-semibold text-amber-700" x-text="formatMoney(selectedBatch?.stage_breakdown?.cash_idle_hkd || 0)"></div>
+                                        <div class="mt-1 text-xs text-slate-500" x-text="formatPercent(selectedBatch?.stage_breakdown?.cash_idle_ratio)"></div>
+                                    </div>
+                                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                        <div class="text-xs text-slate-500">Re-risk quality</div>
+                                        <div class="mt-1 numeric text-lg font-semibold" :class="signedTone(selectedBatch?.stage_breakdown?.rebuy_quality_hkd || 0)" x-text="formatSignedMoney(selectedBatch?.stage_breakdown?.rebuy_quality_hkd || 0)"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="rounded-lg border border-slate-200 bg-white p-4">
+                                <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">funding_ancestors</div>
+                                <div class="mt-2 space-y-2">
+                                    <template x-for="row in (selectedBatch?.funding_ancestors?.top_ancestor_weeks || [])" :key="`batch-ancestor-${row.week_id}`">
+                                        <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <span class="font-medium text-slate-900" x-text="row.week_id"></span>
+                                                <span class="numeric text-sm font-semibold text-slate-900" x-text="formatMoney(row.funded_amount_hkd || 0)"></span>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Text / Text</h2>
+                    <p class="section-description">Text, TextCurrent, TextTradesTextResult. </p>
+                </div>
+            </div>
+            <div class="section-body grid grid-cols-1 gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
+                <div class="space-y-3">
+                    <template x-for="event in adjustment_events" :key="event.event_id">
+                        <button type="button" class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-left hover:bg-slate-50" :class="selectedAdjustment?.event_id === event.event_id ? 'border-blue-300 bg-blue-50/60' : ''" @click="selectAdjustment(event)">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <div class="font-semibold text-slate-900" x-text="event.week_id"></div>
+                                    <div class="text-xs text-slate-500" x-text="`${event.event_start_date} -> ${event.event_end_date}`"></div>
+                                </div>
+                                <div class="numeric text-sm font-semibold" :class="(event.comparison?.current_value_diff_hkd || 0) >= 0 ? 'text-emerald-700' : 'text-red-700'" x-text="formatSignedMoney(event.comparison?.current_value_diff_hkd || 0)"></div>
+                            </div>
+                            <div class="mt-2 flex flex-wrap gap-2 text-xs text-slate-500">
+                                <span x-text="`${event.ops_count} Text`"></span>
+                                <span x-text="`Sell ${formatMoney(event.gross_sell_hkd)}`"></span>
+                                <span x-text="`Buy ${formatMoney(event.gross_buy_hkd)}`"></span>
+                            </div>
+                            <div class="mt-2">
+                                <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium" :class="diagnosisTone(event?.action_diagnosis?.primary_issue)" x-text="event?.action_diagnosis?.headline || 'Text'"></span>
+                                <span class="ml-2 inline-flex rounded-full px-2.5 py-1 text-xs font-medium" :class="verdictTagTone(event?.decision_summary?.verdict_tag)" x-text="verdictTagLabel(event?.decision_summary?.verdict_tag)"></span>
+                            </div>
+                        </button>
+                    </template>
+                </div>
+                <div class="rounded-lg border border-slate-200 bg-slate-50 p-4" x-show="selectedAdjustment">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <div class="text-2xl font-semibold text-slate-900" x-text="selectedAdjustment?.week_id"></div>
+                            <div class="mt-1 text-sm text-slate-500" x-text="`${selectedAdjustment?.event_start_date || ''} -> ${selectedAdjustment?.event_end_date || ''}`"></div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-slate-500">Text</div>
+                            <div class="numeric text-xl font-semibold" :class="(selectedAdjustment?.comparison?.current_value_diff_hkd || 0) >= 0 ? 'text-emerald-700' : 'text-red-700'" x-text="formatSignedMoney(selectedAdjustment?.comparison?.current_value_diff_hkd || 0)"></div>
+                            <div class="text-xs text-slate-500" x-text="formatPercent(selectedAdjustment?.comparison?.return_diff_pct)"></div>
+                        </div>
+                    </div>
+                    <div class="mt-4 rounded-lg border border-slate-200 bg-white p-4">
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Text</div>
+                                <div class="mt-1 text-base font-semibold text-slate-900" x-text="selectedAdjustment?.action_diagnosis?.headline || 'No dataText'"></div>
+                            </div>
+                            <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium" :class="diagnosisTone(selectedAdjustment?.action_diagnosis?.primary_issue)" x-text="diagnosisLabel(selectedAdjustment?.action_diagnosis?.primary_issue)"></span>
+                        </div>
+                        <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+                            <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                <div class="text-xs text-slate-500">SellText</div>
+                                <div class="mt-1 numeric text-lg font-semibold" :class="signedTone(selectedAdjustment?.action_breakdown?.sell_drag_hkd || 0)" x-text="formatSignedMoney(selectedAdjustment?.action_breakdown?.sell_drag_hkd || 0)"></div>
+                            </div>
+                            <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                <div class="text-xs text-slate-500">TextCash</div>
+                                <div class="mt-1 numeric text-lg font-semibold text-amber-700" x-text="formatMoney(selectedAdjustment?.action_breakdown?.cash_idle_hkd || 0)"></div>
+                                <div class="mt-1 text-xs text-slate-500" x-text="formatPercent(selectedAdjustment?.action_breakdown?.cash_idle_ratio)"></div>
+                            </div>
+                            <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                <div class="text-xs text-slate-500">Text</div>
+                                <div class="mt-1 numeric text-lg font-semibold" :class="signedTone(selectedAdjustment?.action_breakdown?.rebuy_quality_hkd || 0)" x-text="formatSignedMoney(selectedAdjustment?.action_breakdown?.rebuy_quality_hkd || 0)"></div>
+                            </div>
+                        </div>
+                        <div class="mt-3 space-y-1 text-sm text-slate-600">
+                            <template x-for="message in (selectedAdjustment?.action_diagnosis?.messages || [])" :key="message">
+                                <div x-text="message"></div>
+                            </template>
+                        </div>
+                        <div class="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Decision Summary</div>
+                                    <div class="mt-2">
+                                        <span class="inline-flex rounded-full px-2.5 py-1 text-xs font-medium" :class="verdictTagTone(selectedAdjustment?.decision_summary?.verdict_tag)" x-text="verdictTagLabel(selectedAdjustment?.decision_summary?.verdict_tag)"></span>
+                                    </div>
+                                    <div class="mt-1 text-base font-semibold text-slate-900" x-text="selectedAdjustment?.decision_summary?.headline || '--'"></div>
+                                    <div class="mt-1 text-sm text-slate-500" x-text="selectedAdjustment?.decision_summary?.phase_flow || '--'"></div>
+                                    <div class="mt-2 space-y-1 text-sm text-slate-600">
+                                        <template x-for="line in (selectedAdjustment?.decision_summary?.explanation_lines || [])" :key="line">
+                                            <div x-text="line"></div>
+                                        </template>
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 gap-2 text-right text-sm md:grid-cols-2">
+                                    <div class="rounded-lg border border-slate-200 bg-white px-3 py-2">
+                                        <div class="text-[11px] uppercase tracking-wide text-slate-500">Best alternative</div>
+                                        <div class="mt-1 font-semibold text-slate-900" x-text="universeLabel(selectedAdjustment?.decision_summary?.best_alternative_key)"></div>
+                                        <div class="mt-1 numeric text-xs" :class="signedTone(selectedAdjustment?.decision_summary?.best_alternative_diff_hkd || 0)" x-text="formatSignedMoney(selectedAdjustment?.decision_summary?.best_alternative_diff_hkd || 0)"></div>
+                                    </div>
+                                    <div class="rounded-lg border border-slate-200 bg-white px-3 py-2">
+                                        <div class="text-[11px] uppercase tracking-wide text-slate-500">Weakest stage</div>
+                                        <div class="mt-1 font-semibold text-slate-900" x-text="stageLabel(selectedAdjustment?.decision_summary?.weakest_stage_key)"></div>
+                                        <div class="mt-1 text-xs text-slate-500" x-text="diagnosisLabel(selectedAdjustment?.action_diagnosis?.primary_issue)"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4 rounded-lg border border-slate-200 bg-white p-4">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Holdings Change</div>
+                                    <div class="mt-1 text-sm text-slate-500">TextTradesTextHoldingsShares. </div>
+                                </div>
+                                <div class="text-xs text-slate-500" x-text="`${holdingChangeCount(selectedAdjustment?.changes)} changed`"></div>
+                            </div>
+                            <div class="mt-3 overflow-x-auto" x-show="holdingChangeRows(selectedAdjustment?.changes).length">
+                                <table class="dr-table min-w-full text-sm">
+                                    <thead class="bg-slate-50">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left font-medium text-slate-600">Change</th>
+                                            <th class="px-3 py-2 text-left font-medium text-slate-600">Stock</th>
+                                            <th class="px-3 py-2 text-right font-medium text-slate-600">Before</th>
+                                            <th class="px-3 py-2 text-right font-medium text-slate-600">After</th>
+                                            <th class="px-3 py-2 text-right font-medium text-slate-600">Delta</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        <template x-for="row in holdingChangeRows(selectedAdjustment?.changes)" :key="`adjustment-change-${row.bucket}-${row.stock_id}`">
+                                            <tr>
+                                                <td class="px-3 py-2"><span class="inline-flex rounded-full px-2 py-1 text-xs font-medium" :class="holdingChangeTone(row.bucket)" x-text="holdingChangeLabel(row.bucket)"></span></td>
+                                                <td class="px-3 py-2 font-medium text-slate-900" x-text="row.stock_name || row.stock_id"></td>
+                                                <td class="px-3 py-2 text-right numeric text-slate-700" x-text="formatShares(row.before_shares)"></td>
+                                                <td class="px-3 py-2 text-right numeric text-slate-700" x-text="formatShares(row.after_shares)"></td>
+                                                <td class="px-3 py-2 text-right numeric font-semibold" :class="signedTone(row.delta_shares || 0)" x-text="formatSignedShares(row.delta_shares)"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="mt-3 rounded-lg border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500" x-show="!holdingChangeRows(selectedAdjustment?.changes).length">TextSharesText. </div>
+                        </div>
+                        <div class="mt-4 rounded-lg border border-slate-200 bg-white p-4" x-show="selectedAdjustment?.counterfactuals">
+                            <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Path Comparison</div>
+                            <div class="mt-1 text-sm text-slate-500">TextTradesText, TextCash, Text; Text. </div>
+                            <div class="mt-3 overflow-x-auto">
+                                <table class="dr-table min-w-full text-sm">
+                                    <thead class="bg-slate-50">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left font-medium text-slate-600">Path</th>
+                                            <th class="px-3 py-2 text-right font-medium text-slate-600">Value now</th>
+                                            <th class="px-3 py-2 text-right font-medium text-slate-600">Return</th>
+                                            <th class="px-3 py-2 text-right font-medium text-slate-600">Alternative vs actual</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        <template x-for="row in universeRows(selectedAdjustment?.counterfactuals)" :key="`adjustment-universe-${row.key}`">
+                                            <tr>
+                                                <td class="px-3 py-2 font-medium text-slate-900" x-text="row.label"></td>
+                                                <td class="px-3 py-2 text-right numeric text-slate-900" x-text="formatMoney(row.current_total_hkd || 0)"></td>
+                                                <td class="px-3 py-2 text-right numeric text-slate-700" x-text="formatPercent(row.return_pct)"></td>
+                                                <td class="px-3 py-2 text-right numeric font-semibold" :class="signedTone(row.vs_actual_hkd || 0)" x-text="row.key === 'actual_redeploy' ? 'baseline' : formatSignedMoney(row.vs_actual_hkd || 0)"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="mt-4 rounded-lg border border-slate-200 bg-white p-4">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Counterfactual Path</div>
+                                    <div class="mt-1 text-sm text-slate-500">Text, Text. </div>
+                                </div>
+                                <button type="button" class="btn-ghost !min-h-9 !px-3 !py-2 text-xs" x-show="(selectedAdjustment?.counterfactual_timeline || []).length > timelineKeyPoints(selectedAdjustment?.counterfactual_timeline || []).length" @click="toggleTimeline('adjustment')">
+                                    <span x-text="showFullTimeline.adjustment ? 'Text' : 'Text'"></span>
+                                </button>
+                            </div>
+                            <div class="dr-chart-panel mt-4 rounded-lg border border-slate-200 p-3">
+                                <div class="flex flex-wrap items-center justify-between gap-3">
+                                    <div class="flex flex-wrap gap-3 text-[11px] text-slate-500">
+                                        <span class="inline-flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full bg-slate-900"></span>Actual</span>
+                                        <span class="inline-flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full bg-blue-500"></span>Hold</span>
+                                        <span class="inline-flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full bg-amber-500"></span>Cash</span>
+                                        <span class="inline-flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span>Rebuy</span>
+                                    </div>
+                                    <div class="inline-flex rounded-lg border border-slate-200 bg-white p-1 text-xs">
+                                        <button type="button" class="rounded-md px-2.5 py-1" :class="timelineChartMode === 'absolute' ? 'bg-slate-900 text-white' : 'text-slate-600'" @click="setTimelineChartMode('absolute')">absolute HKD</button>
+                                        <button type="button" class="rounded-md px-2.5 py-1" :class="timelineChartMode === 'normalized' ? 'bg-slate-900 text-white' : 'text-slate-600'" @click="setTimelineChartMode('normalized')">normalized return</button>
+                                    </div>
+                                    <div class="text-xs text-slate-500" x-text="timelineDivergencePoint(selectedAdjustment?.counterfactual_timeline || [])?.label ? `Text ${timelineDivergencePoint(selectedAdjustment?.counterfactual_timeline || []).label}` : 'No dataText'"></div>
+                                </div>
+                                <div class="mt-3 h-44 w-full">
+                                    <svg viewBox="0 0 760 176" class="h-full w-full overflow-visible">
+                                        <line x1="24" y1="152" x2="736" y2="152" stroke="#d8dee8" stroke-width="1"></line>
+                                        <path :d="timelineGapAreaD(selectedAdjustment?.counterfactual_timeline || [])" fill="rgba(183, 71, 71, 0.12)" stroke="none"></path>
+                                        <path :d="timelinePathForKey(selectedAdjustment?.counterfactual_timeline || [], 'actual_redeploy')" fill="none" stroke="#15212b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                                        <path :d="timelinePathForKey(selectedAdjustment?.counterfactual_timeline || [], 'hold_original')" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"></path>
+                                        <path :d="timelinePathForKey(selectedAdjustment?.counterfactual_timeline || [], 'sell_to_cash')" fill="none" stroke="#d97706" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"></path>
+                                        <path :d="timelinePathForKey(selectedAdjustment?.counterfactual_timeline || [], 'rebuy_original_leaders')" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.8"></path>
+                                        <template x-if="timelineDivergencePoint(selectedAdjustment?.counterfactual_timeline || [])">
+                                            <g>
+                                                <line :x1="timelineX(timelineDivergencePoint(selectedAdjustment?.counterfactual_timeline || []).index, (selectedAdjustment?.counterfactual_timeline || []).length)" y1="18" :x2="timelineX(timelineDivergencePoint(selectedAdjustment?.counterfactual_timeline || []).index, (selectedAdjustment?.counterfactual_timeline || []).length)" y2="152" stroke="#b74747" stroke-dasharray="4 4" stroke-width="1.5"></line>
+                                                <circle :cx="timelineX(timelineDivergencePoint(selectedAdjustment?.counterfactual_timeline || []).index, (selectedAdjustment?.counterfactual_timeline || []).length)" :cy="timelineY(timelineDivergencePoint(selectedAdjustment?.counterfactual_timeline || []).actual, timelineChartRange(selectedAdjustment?.counterfactual_timeline || []).min, timelineChartRange(selectedAdjustment?.counterfactual_timeline || []).max)" r="4" fill="#b74747"></circle>
+                                            </g>
+                                        </template>
+                                    </svg>
+                                </div>
+                            </div>
+                            <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                                <template x-for="row in timelineDisplayRows(selectedAdjustment?.counterfactual_timeline || [], 'adjustment')" :key="`adjustment-path-card-${row.label}`">
+                                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                        <div class="flex items-start justify-between gap-2">
+                                            <div>
+                                                <div class="text-sm font-semibold text-slate-900" x-text="row.label"></div>
+                                                <div class="mt-1 text-[11px] uppercase tracking-wide text-slate-500" x-text="row.week_id || row.date"></div>
+                                            </div>
+                                            <span class="inline-flex rounded-full px-2 py-1 text-[11px] font-medium" :class="verdictTagTone(row.leader_key === 'actual_redeploy' ? 'actual_best' : 'hold_would_win')" x-text="universeShortLabel(row.leader_key)"></span>
+                                        </div>
+                                        <div class="mt-3 grid grid-cols-2 gap-2 text-xs">
+                                            <div>
+                                                <div class="text-slate-500">Actual</div>
+                                                <div class="mt-1 numeric font-semibold text-slate-900" x-text="formatMoney(timelineUniverseValue(row, 'actual_redeploy'))"></div>
+                                            </div>
+                                            <div>
+                                                <div class="text-slate-500">Best gap</div>
+                                                <div class="mt-1 numeric font-semibold" :class="signedTone(timelineSpreadVsBest(row))" x-text="formatSignedMoney(timelineSpreadVsBest(row))"></div>
+                                            </div>
+                                            <div>
+                                                <div class="text-slate-500">Hold</div>
+                                                <div class="mt-1 numeric text-slate-700" x-text="formatMoney(timelineUniverseValue(row, 'hold_original'))"></div>
+                                            </div>
+                                            <div>
+                                                <div class="text-slate-500">Cash / Rebuy</div>
+                                                <div class="mt-1 numeric text-slate-700" x-text="`${formatMoney(timelineUniverseValue(row, 'sell_to_cash'))} / ${formatMoney(timelineUniverseValue(row, 'rebuy_original_leaders'))}`"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                            <div class="mt-4 overflow-x-auto" x-show="showFullTimeline.adjustment">
+                                <table class="dr-table min-w-full text-sm">
+                                    <thead class="bg-slate-50">
+                                        <tr>
+                                            <th class="px-3 py-2 text-left font-medium text-slate-600">Point</th>
+                                            <th class="px-3 py-2 text-right font-medium text-slate-600">Actual</th>
+                                            <th class="px-3 py-2 text-right font-medium text-slate-600">Hold</th>
+                                            <th class="px-3 py-2 text-right font-medium text-slate-600">Cash</th>
+                                            <th class="px-3 py-2 text-right font-medium text-slate-600">Rebuy</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        <template x-for="row in (selectedAdjustment?.counterfactual_timeline || [])" :key="`adjustment-path-${row.label}`">
+                                            <tr>
+                                                <td class="px-3 py-2 font-medium text-slate-900" x-text="row.label"></td>
+                                                <td class="px-3 py-2 text-right numeric text-slate-900" x-text="formatMoney(row?.universes?.actual_redeploy?.current_total_hkd || 0)"></td>
+                                                <td class="px-3 py-2 text-right numeric text-slate-700" x-text="formatMoney(row?.universes?.hold_original?.current_total_hkd || 0)"></td>
+                                                <td class="px-3 py-2 text-right numeric text-slate-700" x-text="formatMoney(row?.universes?.sell_to_cash?.current_total_hkd || 0)"></td>
+                                                <td class="px-3 py-2 text-right numeric text-slate-700" x-text="formatMoney(row?.universes?.rebuy_original_leaders?.current_total_hkd || 0)"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="mt-4 rounded-lg border border-slate-200 bg-white p-4">
+                            <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Stage Breakdown</div>
+                            <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
+                                <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                    <div class="text-xs text-slate-500">Sell judgment</div>
+                                    <div class="mt-1 numeric text-lg font-semibold" :class="signedTone(selectedAdjustment?.stage_breakdown?.sell_judgment_hkd || 0)" x-text="formatSignedMoney(selectedAdjustment?.stage_breakdown?.sell_judgment_hkd || 0)"></div>
+                                </div>
+                                <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                    <div class="text-xs text-slate-500">Cash ledger</div>
+                                    <div class="mt-1 numeric text-lg font-semibold text-amber-700" x-text="formatMoney(selectedAdjustment?.stage_breakdown?.cash_idle_hkd || 0)"></div>
+                                    <div class="mt-1 text-xs text-slate-500" x-text="formatPercent(selectedAdjustment?.stage_breakdown?.cash_idle_ratio)"></div>
+                                </div>
+                                <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                                    <div class="text-xs text-slate-500">Re-risk quality</div>
+                                    <div class="mt-1 numeric text-lg font-semibold" :class="signedTone(selectedAdjustment?.stage_breakdown?.rebuy_quality_hkd || 0)" x-text="formatSignedMoney(selectedAdjustment?.stage_breakdown?.rebuy_quality_hkd || 0)"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
+                            <div>
+                                <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">top_sold_drags</div>
+                                <div class="mt-2 space-y-2">
+                                    <template x-for="row in (selectedAdjustment?.action_breakdown?.top_sold_drags || [])" :key="`sold-${row.stock_id}-${row.sell_date}`">
+                                        <div class="rounded-lg border border-red-100 bg-red-50 px-3 py-2">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <span class="font-medium text-red-900" x-text="row.stock_id"></span>
+                                                <span class="numeric text-sm font-semibold text-red-700" x-text="formatSignedMoney(row.impact_hkd || 0)"></span>
+                                            </div>
+                                            <div class="mt-1 text-xs text-red-700" x-text="row.sell_date || '--'"></div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Text</div>
+                                <div class="mt-2 space-y-2">
+                                    <template x-for="row in (selectedAdjustment?.action_breakdown?.top_rebuy_drags || [])" :key="`rebuy-${row.stock_id}-${row.sell_date}`">
+                                        <div class="rounded-lg border border-amber-100 bg-amber-50 px-3 py-2">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <span class="font-medium text-amber-900" x-text="row.stock_id"></span>
+                                                <span class="numeric text-sm font-semibold text-amber-700" x-text="formatSignedMoney(row.impact_hkd || 0)"></span>
+                                            </div>
+                                            <div class="mt-1 text-xs text-amber-700" x-text="row.sell_date || '--'"></div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Text</div>
+                                <div class="mt-2 space-y-2">
+                                    <template x-for="row in (selectedAdjustment?.action_breakdown?.top_redeploy_targets || [])" :key="`target-${row.stock_id}`">
+                                        <div class="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <span class="font-medium text-emerald-900" x-text="row.stock_id"></span>
+                                                <span class="numeric text-sm font-semibold text-emerald-700" x-text="formatMoney(row.allocated_amount_hkd || 0)"></span>
+                                            </div>
+                                            <div class="mt-1 text-xs text-emerald-700" x-text="(row.source_weeks || []).join(' / ') || '--'"></div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4" x-show="selectedAdjustment?.funding_ancestors">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">funding_ancestors</div>
+                                    <div class="mt-1 text-sm text-slate-600">TextBuyTextSellText, TextTradesText. </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3 text-right text-sm">
+                                    <div>
+                                        <div class="text-xs text-slate-500">TextBuy</div>
+                                        <div class="numeric font-semibold text-slate-900" x-text="formatMoney(selectedAdjustment?.funding_ancestors?.funded_buy_amount_hkd || 0)"></div>
+                                    </div>
+                                    <div>
+                                        <div class="text-xs text-slate-500">TextBuy</div>
+                                        <div class="numeric font-semibold text-slate-900" x-text="formatMoney(selectedAdjustment?.funding_ancestors?.uncovered_buy_amount_hkd || 0)"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-3 grid grid-cols-1 gap-4 xl:grid-cols-2">
+                                <div>
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">top_ancestor_weeks</div>
+                                    <div class="mt-2 space-y-2">
+                                        <template x-for="row in (selectedAdjustment?.funding_ancestors?.top_ancestor_weeks || [])" :key="`ancestor-week-${row.week_id}`">
+                                            <div class="rounded-lg border border-slate-200 bg-white px-3 py-2">
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <span class="font-medium text-slate-900" x-text="row.week_id"></span>
+                                                    <span class="numeric text-sm font-semibold text-slate-900" x-text="formatMoney(row.funded_amount_hkd || 0)"></span>
+                                                </div>
+                                                <div class="mt-1 text-xs text-slate-500" x-text="(row.buy_targets || []).join(' / ')"></div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">TextSellText</div>
+                                    <div class="mt-2 space-y-2">
+                                        <template x-for="row in (selectedAdjustment?.funding_ancestors?.top_ancestor_sells || [])" :key="`ancestor-sell-${row.week_id}-${row.stock_id}-${row.sell_date}`">
+                                            <div class="rounded-lg border border-slate-200 bg-white px-3 py-2">
+                                                <div class="flex items-center justify-between gap-2">
+                                                    <span class="font-medium text-slate-900" x-text="`${row.week_id} · ${row.stock_id}`"></span>
+                                                    <span class="numeric text-sm font-semibold text-slate-900" x-text="formatMoney(row.funded_amount_hkd || 0)"></span>
+                                                </div>
+                                                <div class="mt-1 text-xs text-slate-500" x-text="`${row.sell_date} · ${(row.buy_targets || []).join(' / ')}`"></div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+                        <div class="rounded-lg border border-slate-200 bg-white p-4">
+                            <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Text</div>
+                            <div class="mt-3 grid grid-cols-2 gap-3 text-sm">
+                                <div>
+                                    <div class="text-xs text-slate-500">Text</div>
+                                    <div class="numeric font-semibold text-slate-900" x-text="formatMoney(selectedAdjustment?.pre_snapshot?.start_total_hkd)"></div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500">CurrentText</div>
+                                    <div class="numeric font-semibold text-slate-900" x-text="formatMoney(selectedAdjustment?.pre_snapshot?.current_total_hkd)"></div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500">ReturnText</div>
+                                    <div class="numeric font-semibold text-slate-900" x-text="formatPercent(selectedAdjustment?.pre_snapshot?.return_pct)"></div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500">Cash</div>
+                                    <div class="numeric font-semibold text-slate-900" x-text="formatMoney(selectedAdjustment?.pre_snapshot?.cash_hkd)"></div>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                <template x-for="row in (selectedAdjustment?.pre_snapshot?.top_positions || [])" :key="`pre-${row.stock_id}`">
+                                    <span class="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700" x-text="`${row.stock_id} · ${formatMoney(row.value_hkd)}`"></span>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="rounded-lg border border-slate-200 bg-white p-4">
+                            <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Text</div>
+                            <div class="mt-3 grid grid-cols-2 gap-3 text-sm">
+                                <div>
+                                    <div class="text-xs text-slate-500">Text</div>
+                                    <div class="numeric font-semibold text-slate-900" x-text="formatMoney(selectedAdjustment?.post_snapshot?.start_total_hkd)"></div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500">CurrentText</div>
+                                    <div class="numeric font-semibold text-slate-900" x-text="formatMoney(selectedAdjustment?.post_snapshot?.current_total_hkd)"></div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500">ReturnText</div>
+                                    <div class="numeric font-semibold text-slate-900" x-text="formatPercent(selectedAdjustment?.post_snapshot?.return_pct)"></div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500">Cash</div>
+                                    <div class="numeric font-semibold text-slate-900" x-text="formatMoney(selectedAdjustment?.post_snapshot?.cash_hkd)"></div>
+                                </div>
+                            </div>
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                <template x-for="row in (selectedAdjustment?.post_snapshot?.top_positions || [])" :key="`post-${row.stock_id}`">
+                                    <span class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-medium text-blue-700" x-text="`${row.stock_id} · ${formatMoney(row.value_hkd)}`"></span>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
+                        <div class="rounded-lg border border-slate-200 bg-white p-4">
+                            <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Sell/Text</div>
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                <template x-for="stockId in (selectedAdjustment?.changes?.sold || []).concat(selectedAdjustment?.changes?.reduced || [])" :key="`sold-${stockId}`">
+                                    <span class="rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700" x-text="stockId"></span>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="rounded-lg border border-slate-200 bg-white p-4">
+                            <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Text/Text</div>
+                            <div class="mt-2 flex flex-wrap gap-2">
+                                <template x-for="stockId in (selectedAdjustment?.changes?.added || []).concat(selectedAdjustment?.changes?.increased || [])" :key="`add-${stockId}`">
+                                    <span class="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700" x-text="stockId"></span>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="rounded-lg border border-slate-200 bg-white p-4">
+                            <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">TextCashText</div>
+                            <div class="mt-2 numeric text-xl font-semibold text-slate-900" x-text="formatSignedMoney(selectedAdjustment?.net_cash_hkd || 0)"></div>
+                            <div class="mt-1 text-xs text-slate-500" x-text="`post cash - pre cash ${formatSignedMoney(selectedAdjustment?.comparison?.cash_diff_hkd || 0)}`"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 gap-5 xl:grid-cols-2">
+            <div class="section-card">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Text</h2>
+                        <p class="section-description">TextSellText, CashText, TextOpportunity Cost. </p>
+                    </div>
+                </div>
+                <div class="section-body grid grid-cols-1 gap-3 md:grid-cols-3">
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">SellText</div>
+                        <div class="mt-2 numeric text-xl font-semibold text-red-700" x-text="stage_summary?.sell_judgment?.negative_count || 0"></div>
+                        <div class="mt-1 text-xs text-slate-500">TextSellText</div>
+                        <div class="mt-2 numeric text-sm text-red-700" x-text="formatSignedMoney(-(stage_summary?.sell_judgment?.negative_total || 0))"></div>
+                    </div>
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">CashText</div>
+                        <div class="mt-2 numeric text-xl font-semibold text-amber-700" x-text="stage_summary?.cash_redeployment?.idle_count || 0"></div>
+                        <div class="mt-1 text-xs text-slate-500">TextSellCashText</div>
+                        <div class="mt-2 numeric text-sm text-slate-700" x-text="formatMoney(stage_summary?.cash_redeployment?.idle_cash_total || 0)"></div>
+                    </div>
+                    <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Text</div>
+                        <div class="mt-2 numeric text-xl font-semibold text-red-700" x-text="stage_summary?.re_risk_quality?.negative_count || 0"></div>
+                        <div class="mt-1 text-xs text-slate-500">Text re-risk Text alpha Text</div>
+                        <div class="mt-2 numeric text-sm text-red-700" x-text="formatSignedMoney(-(stage_summary?.re_risk_quality?.negative_total || 0))"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">LedgerText</h2>
+                        <p class="section-description">TextTradeText, TextSellTextBuyTextCurrentLedgerText. </p>
+                    </div>
+                </div>
+                <div class="section-body space-y-3">
+                    <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+                        <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                            <div class="text-xs text-slate-500">TextDate</div>
+                            <div class="mt-1 numeric text-lg font-semibold text-red-700" x-text="integrity_audit?.summary?.malformed_op_count || 0"></div>
+                        </div>
+                        <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                            <div class="text-xs text-slate-500">TextBuyText</div>
+                            <div class="mt-1 numeric text-lg font-semibold text-amber-700" x-text="integrity_audit?.summary?.future_buy_unmatched_count || 0"></div>
+                        </div>
+                        <div class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                            <div class="text-xs text-slate-500">TextSellText</div>
+                            <div class="mt-1 numeric text-lg font-semibold text-slate-900" x-text="integrity_audit?.summary?.blocked_by_prior_sell_count || 0"></div>
+                            <div class="mt-1 text-xs text-slate-500" x-text="`Text ${(integrity_audit?.summary?.residual_future_buy_unmatched_count || 0)}`"></div>
+                        </div>
+                    </div>
+                    <div x-show="(integrity_audit?.malformed_ops || []).length" class="rounded-lg border border-red-100 bg-red-50 p-3">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-red-700">DateText</div>
+                        <div class="mt-2 space-y-1 text-sm text-red-700">
+                            <template x-for="row in (integrity_audit?.malformed_ops || []).slice(0, 4)" :key="`${row.week_id}-${row.stock_id}-${row.raw_date}`">
+                                <div x-text="`${row.week_id} · ${row.stock_id} · ${row.raw_date}`"></div>
+                            </template>
+                        </div>
+                    </div>
+                    <div x-show="(integrity_audit?.future_buy_unmatched || []).length" class="rounded-lg border border-amber-100 bg-amber-50 p-3">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-amber-800">TextBuyText</div>
+                        <div class="mt-2 space-y-2 text-sm text-amber-900">
+                            <template x-for="row in (integrity_audit?.future_buy_unmatched || []).slice(0, 4)" :key="`${row.week_id}-${row.stock_id}-${row.sell_date}`">
+                                <div>
+                                    <div class="font-medium" x-text="`${row.week_id} · ${row.stock_id} · ${row.sell_date}`"></div>
+                                    <div class="text-xs text-amber-700" x-text="row.future_buys.map((buy) => `${buy.week_id} ${buy.stock_id}`).join(' / ')"></div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <div x-show="(integrity_audit?.blocked_by_prior_sells || []).length" class="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-700">blocked_by_prior_sells</div>
+                        <div class="mt-2 space-y-2 text-sm text-slate-800">
+                            <template x-for="row in (integrity_audit?.blocked_by_prior_sells || []).slice(0, 4)" :key="`${row.week_id}-${row.stock_id}-${row.sell_date}`">
+                                <div class="rounded-lg border border-slate-200 bg-white p-3">
+                                    <div class="font-medium" x-text="`${row.week_id} · ${row.stock_id} · ${row.sell_date}`"></div>
+                                    <div class="mt-1 text-xs text-slate-500" x-text="`TextBuyText, TextSellTextCashText`"></div>
+                                    <div class="mt-2 text-xs text-slate-600" x-text="`TextSell: ${(row.blocking_sells || []).map((item) => `${item.week_id} ${item.stock_id}`).join(' / ')}`"></div>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                    <div x-show="(integrity_audit?.cash_chain_summary?.top_blocking_weeks || []).length" class="rounded-lg border border-slate-200 bg-white p-3">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-700">cash_chain_summary</div>
+                        <div class="mt-3 grid grid-cols-1 gap-4 xl:grid-cols-2">
+                            <div>
+                                <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">top_blocking_weeks</div>
+                                <div class="mt-2 space-y-2">
+                                    <template x-for="row in (integrity_audit?.cash_chain_summary?.top_blocking_weeks || []).slice(0, 6)" :key="`week-${row.week_id}`">
+                                        <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <span class="font-medium text-slate-900" x-text="row.week_id"></span>
+                                                <span class="numeric text-sm font-semibold text-slate-900" x-text="formatMoney(row.blocked_amount_hkd || 0)"></span>
+                                            </div>
+                                            <div class="mt-1 text-xs text-slate-500" x-text="`${row.blocked_event_count} Text · ${(row.blocked_stocks || []).join(' / ')}`"></div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">top_blocking_sells</div>
+                                <div class="mt-2 space-y-2">
+                                    <template x-for="row in (integrity_audit?.cash_chain_summary?.top_blocking_sells || []).slice(0, 6)" :key="`sell-${row.week_id}-${row.stock_id}-${row.sell_date}`">
+                                        <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <span class="font-medium text-slate-900" x-text="`${row.week_id} · ${row.stock_id}`"></span>
+                                                <span class="numeric text-sm font-semibold text-slate-900" x-text="formatMoney(row.blocked_amount_hkd || 0)"></span>
+                                            </div>
+                                            <div class="mt-1 text-xs text-slate-500" x-text="`${row.sell_date} · ${row.blocked_event_count} Text`"></div>
+                                            <div class="mt-1 text-xs text-slate-500" x-text="`Text ${(row.blocked_weeks || []).join(' / ')}`"></div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section x-show="!all_events.length" class="section-card">
+            <div class="section-body rounded-lg border border-dashed border-slate-200 bg-slate-50 px-4 py-6 text-sm text-slate-500">
+                Text, Text W5 TextSellText. TextWeekly ReviewText rebalancing_ops Text stock_id, op_type, quantity, price, date. 
+            </div>
+        </section>
+
+        <section x-show="all_events.length" class="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.45fr)_minmax(360px,0.8fr)]">
+            <div class="section-card">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">TextSellResult</h2>
+                        <!-- Worst Sell Decisions -->
+                        <p class="section-description">Text W5 TextSell: Text, TextOpportunity Cost. </p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 text-xs">
+                        <button type="button" class="rounded-md border px-3 py-1.5" :class="resultFilter === 'all' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'" @click="resultFilter = 'all'">Text</button>
+                        <button type="button" class="rounded-md border px-3 py-1.5" :class="resultFilter === 'positive' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'" @click="resultFilter = 'positive'">TextSell</button>
+                        <button type="button" class="rounded-md border px-3 py-1.5" :class="resultFilter === 'negative' ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-400'" @click="resultFilter = 'negative'">Opportunity Cost</button>
+                    </div>
+                </div>
+                <div class="section-body overflow-x-auto">
+                    <div class="mb-4 grid grid-cols-1 gap-3 lg:grid-cols-2">
+                        <div class="opportunity-drill-grid rounded-lg border p-3" x-show="top_effective.length">
+                            <div class="text-xs font-semibold uppercase tracking-wide text-emerald-700">Text</div>
+                            <div class="mt-1 text-xs text-emerald-700/80">TextSellText. </div>
+                            <div class="mt-3 grid grid-cols-1 gap-2">
+                                <template x-for="top_effective in (top_effective || []).slice(0, 4)" :key="`top-effective-${top_effective.event_id}`">
+                                    <button type="button" class="rounded-md border bg-white px-3 py-2 text-left hover:bg-emerald-50" :class="selected?.event_id === top_effective.event_id ? 'ring-1 ring-emerald-300' : ''" @click="selectEvent(top_effective)">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <div class="font-semibold text-slate-900" x-text="top_effective.stock_id"></div>
+                                            <div class="numeric text-sm font-semibold text-emerald-700" x-text="formatSignedMoney(eventContribution(top_effective))"></div>
+                                        </div>
+                                        <div class="mt-1 text-xs text-slate-500" x-text="deterministicVerdictText(top_effective)"></div>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                        <div class="opportunity-drill-grid rounded-lg border p-3" x-show="top_mistakes.length">
+                            <div class="text-xs font-semibold uppercase tracking-wide text-red-700">Opportunity CostText</div>
+                            <div class="mt-1 text-xs text-red-700/80">TextSellText. </div>
+                            <div class="mt-3 grid grid-cols-1 gap-2">
+                                <template x-for="top_mistake in (top_mistakes || []).slice(0, 4)" :key="`top-drill-${top_mistake.event_id}`">
+                                    <button type="button" class="rounded-md border bg-white px-3 py-2 text-left hover:bg-red-50" :class="selected?.event_id === top_mistake.event_id ? 'ring-1 ring-red-300' : ''" @click="selectEvent(top_mistake)">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <div class="font-semibold text-slate-900" x-text="top_mistake.stock_id"></div>
+                                            <div class="numeric text-sm font-semibold text-red-700" x-text="formatSignedMoney(eventContribution(top_mistake))"></div>
+                                        </div>
+                                        <div class="mt-1 text-xs text-slate-500" x-text="deterministicVerdictText(top_mistake)"></div>
+                                    </button>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="dr-main-results-scroll overflow-auto">
+                        <table class="dr-table dr-main-results-table min-w-full text-sm">
+                            <thead class="bg-slate-50 text-slate-600">
+                                <tr>
+                                    <th class="px-3 py-2 text-left font-medium">
+                                        <button type="button" class="inline-flex items-center gap-1 hover:text-slate-900" @click="setSort('stock_id')">
+                                            Text <span class="text-xs" x-text="sortIndicator('stock_id')"></span>
+                                        </button>
+                                    </th>
+                                    <th class="px-3 py-2 text-left font-medium">
+                                        <button type="button" class="inline-flex items-center gap-1 hover:text-slate-900" @click="setSort('sell_date')">
+                                            SellText <span class="text-xs" x-text="sortIndicator('sell_date')"></span>
+                                        </button>
+                                    </th>
+                                    <th class="px-3 py-2 text-right font-medium">
+                                        <button type="button" class="inline-flex items-center gap-1 hover:text-slate-900" @click="setSort('sold_capital')">
+                                            TextWithdrawalText <span class="text-xs" x-text="sortIndicator('sold_capital')"></span>
+                                        </button>
+                                    </th>
+                                    <th class="px-3 py-2 text-right font-medium">
+                                        <button type="button" class="inline-flex items-center gap-1 hover:text-slate-900" @click="setSort('selected_mark')" title="Selected mark result">
+                                            Text <span class="text-xs" x-text="sortIndicator('hold_return')"></span>
+                                        </button>
+                                    </th>
+                                    <th class="px-3 py-2 text-right font-medium">
+                                        <button type="button" class="inline-flex items-center gap-1 hover:text-slate-900" @click="setSort('actual_return')">
+                                            Text <span class="text-xs" x-text="sortIndicator('actual_return')"></span>
+                                        </button>
+                                    </th>
+                                    <th class="px-3 py-2 text-right font-medium">
+                                        <button type="button" class="inline-flex items-center gap-1 hover:text-slate-900" @click="setSort('contribution')">
+                                            Text <span class="text-xs" x-text="sortIndicator('contribution')"></span>
+                                        </button>
+                                    </th>
+                                    <th class="px-3 py-2 text-left font-medium">
+                                        <button type="button" class="inline-flex items-center gap-1 hover:text-slate-900" @click="setSort('verdict')">
+                                            Text <span class="text-xs" x-text="sortIndicator('verdict')"></span>
+                                        </button>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100 bg-white">
+                                <template x-for="event in filteredEvents()" :key="event.event_id">
+                                    <tr class="cursor-pointer hover:bg-slate-50" :class="selected?.event_id === event.event_id ? 'is-selected' : ''" @click="selectEvent(event)">
+                                        <td class="px-3 py-3">
+                                            <div class="font-semibold text-slate-900" x-text="event.stock_id"></div>
+                                            <div class="text-xs text-slate-500" x-text="event.week_id"></div>
+                                        </td>
+                                        <td class="px-3 py-3 text-slate-600" x-text="event.sell_date || '--'"></td>
+                                        <td class="px-3 py-3 text-right numeric text-slate-700" x-text="formatMoney(event.sold_capital)"></td>
+                                        <td class="px-3 py-3 text-right numeric">
+                                            <div x-text="formatSignedMoney(eventBlock(event, 'original_hold')?.pnl)"></div>
+                                            <div class="text-xs text-slate-500" x-text="formatPercent(ifHeldReturn(event))"></div>
+                                        </td>
+                                        <td class="px-3 py-3 text-right numeric">
+                                            <div x-text="formatSignedMoney(eventBlock(event, 'actual_result')?.pnl)"></div>
+                                            <div class="text-xs text-slate-500" x-text="formatPercent(actualPathReturn(event))"></div>
+                                        </td>
+                                        <td class="px-3 py-3 text-right numeric font-semibold" :class="pathSpreadTone(event)" x-text="formatSignedMoney(pathSpreadReturn(event))"></td>
+                                        <td class="px-3 py-3">
+                                            <span class="rounded-full px-2.5 py-1 text-xs font-medium" :class="deterministicVerdictTone(event?.deterministic_verdict)" x-text="deterministicVerdictText(event)"></span>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <aside class="section-card decision-detail-panel">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">TextSellDetails</h2>
+                        <p class="section-description">TextSellText, Text, TextResult. </p>
+                    </div>
+                </div>
+                <div class="section-body" x-show="selected">
+                    <div class="deterministic-verdict-callout flex items-start justify-between gap-3">
+                        <div>
+                            <div class="text-2xl font-semibold text-slate-900" x-text="selected?.stock_id"></div>
+                            <div class="mt-1 text-sm text-slate-500" x-text="`${selected?.week_id || ''} · ${selected?.sell_date || ''}`"></div>
+                            <div class="mt-2">
+                                <span class="rounded-full px-2.5 py-1 text-xs font-medium" :class="deterministicVerdictTone(selected?.deterministic_verdict)" x-text="selected?.deterministic_verdict?.label || verdictText(selected)"></span>
+                            </div>
+                            <div class="mt-2 text-sm text-slate-600" x-text="selected?.deterministic_verdict?.description || ''"></div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-xs text-slate-500" x-text="pathSpreadLabel(selected)"></div>
+                            <div class="numeric text-lg font-semibold" :class="pathSpreadTone(selected)" x-text="formatSignedMoney(pathSpreadReturn(selected))"></div>
+                        </div>
+                    </div>
+
+                    <div class="dr-compact-card mt-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div>
+                                <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Counterfactual Waterfall</div>
+                                <div class="mt-1 text-xs text-slate-500" x-text="selected?.counterfactual_waterfall?.bridge_definition || 'actual_minus_hold = sell_timing + redeploy_selection'"></div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xs text-slate-500" x-text="markHorizonLabel(selected?.counterfactual_waterfall?.horizon || selectedMark)"></div>
+                                <div class="numeric font-semibold" :class="signedTone(selected?.counterfactual_waterfall?.actual_minus_hold_hkd || 0)" x-text="formatSignedMoney(selected?.counterfactual_waterfall?.actual_minus_hold_hkd)"></div>
+                            </div>
+                        </div>
+                        <div class="mt-3 space-y-2">
+                            <template x-for="step in (selected?.counterfactual_waterfall?.steps || [])" :key="`waterfall-${selected?.event_id}-${step.key}`">
+                                <div class="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                                    <div class="flex items-center justify-between gap-3">
+                                        <div>
+                                            <div class="text-sm font-semibold text-slate-900" x-text="step.label"></div>
+                                            <div class="text-xs text-slate-500" x-text="step.definition"></div>
+                                        </div>
+                                        <div class="numeric text-sm font-semibold" :class="waterfallStepTone(step)" x-text="formatSignedMoney(step.value_hkd)"></div>
+                                    </div>
+                                    <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-white">
+                                        <div class="h-full rounded-full" :class="waterfallStepTone(step).includes('emerald') ? 'bg-emerald-500' : (waterfallStepTone(step).includes('red') ? 'bg-red-500' : 'bg-slate-400')" :style="`width: ${waterfallStepWidth(step, selected?.counterfactual_waterfall?.steps || [])}%`"></div>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        <div class="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-dashed border-slate-200 bg-white px-3 py-2 text-xs text-slate-500">
+                            <span>Bridge check</span>
+                            <span class="numeric font-semibold" :class="signedTone(-(Math.abs(selected?.counterfactual_waterfall?.bridge_check_hkd || 0)))" x-text="formatSignedMoney(selected?.counterfactual_waterfall?.bridge_check_hkd)"></span>
+                        </div>
+                    </div>
+
+                    <div class="dr-compact-card mt-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Text</div>
+                                <div class="mt-1 text-xs text-slate-500">Text = Text P/L - Text P/L</div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xs text-slate-500" x-text="pathSpreadLabel(selected)"></div>
+                                <div class="numeric font-semibold" :class="pathSpreadTone(selected)" x-text="formatSignedMoney(pathSpreadReturn(selected))"></div>
+                            </div>
+                        </div>
+                        <div class="dr-detail-metric-grid mt-3 grid grid-cols-3 gap-3 text-sm">
+                            <div>
+                                <div class="text-xs text-slate-500">Text</div>
+                                <div class="numeric font-semibold text-slate-900" x-text="formatSignedMoney(eventBlock(selected, 'original_hold')?.pnl)"></div>
+                                <div class="numeric text-xs text-slate-500" x-text="formatPercent(ifHeldReturn(selected))"></div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-slate-500">Text</div>
+                                <div class="numeric font-semibold text-slate-900" x-text="formatSignedMoney(eventBlock(selected, 'actual_result')?.pnl)"></div>
+                                <div class="numeric text-xs text-slate-500" x-text="formatPercent(actualPathReturn(selected))"></div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-slate-500">Text</div>
+                                <div class="numeric font-semibold" :class="pathSpreadTone(selected)" x-text="formatSignedMoney(pathSpreadReturn(selected))"></div>
+                                <div class="numeric text-xs text-slate-500" x-text="formatPercent(pathSpreadPct(selected))"></div>
+                            </div>
+                        </div>
+                        <div class="fund-flow-mini-table mt-3 overflow-x-auto" x-show="(selected?.drilldown?.fund_flow?.targets || []).length">
+                            <table class="dr-table min-w-full text-xs">
+                                <thead class="bg-slate-50">
+                                    <tr>
+                                        <th class="px-2 py-2 text-left font-medium text-slate-600">Actual buy</th>
+                                        <th class="px-2 py-2 text-right font-medium text-slate-600">Capital</th>
+                                        <th class="px-2 py-2 text-right font-medium text-slate-600">P/L</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <template x-for="row in (selected?.drilldown?.fund_flow?.targets || [])" :key="`selected-flow-${row.week_id}-${row.stock_id}`">
+                                        <tr>
+                                            <td class="px-2 py-2 font-medium text-slate-900" x-text="row.stock_name || row.stock_id"></td>
+                                            <td class="px-2 py-2 text-right numeric text-slate-700" x-text="formatMoney(row.allocated_amount_hkd || 0)"></td>
+                                            <td class="px-2 py-2 text-right numeric font-semibold" :class="signedTone(row.pnl_hkd || 0)" x-text="formatSignedMoney(row.pnl_hkd || 0)"></td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="dr-compact-card mt-4">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">30D Text</div>
+                                <div class="mt-1 text-xs text-slate-500" x-text="selectedEventMarkDate(selected)"></div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xs text-slate-500">30D vs Now</div>
+                                <div class="numeric font-semibold" :class="signedTone(selected?.drilldown?.mark_now_gap_hkd || 0)" x-text="formatSignedMoney(selected?.drilldown?.mark_now_gap_hkd)"></div>
+                            </div>
+                        </div>
+                        <div class="dr-detail-metric-grid mt-3 grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <div class="text-xs text-slate-500">30D Text</div>
+                                <div class="numeric font-semibold text-slate-900" x-text="formatPercent(selected?.original_hold_30d?.return)"></div>
+                                <div class="numeric text-xs text-slate-500" x-text="formatMoney(selected?.original_hold_30d?.pnl)"></div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-slate-500">30D Text</div>
+                                <div class="numeric font-semibold text-slate-900" x-text="formatPercent(selected?.actual_result_30d?.return)"></div>
+                                <div class="numeric text-xs text-slate-500" x-text="formatMoney(selected?.actual_result_30d?.pnl)"></div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-slate-500">Now Text</div>
+                                <div class="numeric font-semibold text-slate-900" x-text="formatPercent(ifHeldReturn(selected))"></div>
+                                <div class="numeric text-xs text-slate-500" x-text="formatMoney(eventBlock(selected, 'original_hold')?.pnl)"></div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-slate-500">Now Text</div>
+                                <div class="numeric font-semibold text-slate-900" x-text="formatPercent(actualPathReturn(selected))"></div>
+                                <div class="numeric text-xs text-slate-500" x-text="formatMoney(eventBlock(selected, 'actual_result')?.pnl)"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dr-stage-stack mt-4 space-y-3">
+                        <div class="dr-stage-card stage-sell rounded-lg border p-3">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                            <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Text 1 · SellText</div>
+                                    <div class="mt-1 text-sm text-slate-600">TextCash, Text derisk Text. </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs text-slate-500">TextResult</div>
+                                    <div class="numeric text-lg font-semibold" :class="stageContributionTone(sellDecisionContribution(selected))" x-text="formatSignedMoney(sellDecisionContribution(selected))"></div>
+                                </div>
+                            </div>
+                            <div class="dr-detail-metric-grid mt-3 grid grid-cols-2 gap-3 text-sm">
+                                <div>
+                                    <div class="text-xs text-slate-500">Text</div>
+                                    <div class="numeric font-semibold text-slate-900" x-text="formatPercent(eventBlock(selected, 'original_hold')?.return)"></div>
+                                    <div class="numeric text-xs text-slate-500" x-text="formatMoney(eventBlock(selected, 'original_hold')?.pnl)"></div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500">TextCash</div>
+                                    <div class="numeric font-semibold text-slate-900" x-text="formatPercent(eventBlock(selected, 'cash_result')?.return)"></div>
+                                    <div class="numeric text-xs text-slate-500" x-text="formatMoney(eventBlock(selected, 'cash_result')?.pnl)"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dr-stage-card stage-cash rounded-lg border p-3">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Text 2 · CashLedger</div>
+                                    <div class="mt-1 text-sm text-slate-600">TextSellTextBuyText, TextCashText. </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs text-slate-500">Text</div>
+                                    <div class="numeric text-lg font-semibold text-slate-900" x-text="formatPercent(matchedCoverage(selected))"></div>
+                                </div>
+                            </div>
+                            <div class="dr-detail-metric-grid mt-3 grid grid-cols-2 gap-3 text-sm">
+                                <div>
+                                    <div class="text-xs text-slate-500">Text</div>
+                                    <div class="numeric font-semibold text-slate-900" x-text="formatMoney(eventBlock(selected, 'actual_result')?.matched_amount)"></div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500">TextCash</div>
+                                    <div class="numeric font-semibold text-slate-900" x-text="formatMoney(eventBlock(selected, 'actual_result')?.unallocated_amount)"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="dr-stage-card stage-redeploy rounded-lg border p-3">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Text 3 · Text</div>
+                                    <div class="mt-1 text-sm text-slate-600">TextRiskTextCash, Text re-risk Text alpha Text. </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-xs text-slate-500">re-risk Contribution</div>
+                                    <div class="numeric text-lg font-semibold" :class="stageContributionTone(redeployContribution(selected))" x-text="formatSignedMoney(redeployContribution(selected))"></div>
+                                </div>
+                            </div>
+                            <div class="dr-detail-metric-grid mt-3 grid grid-cols-2 gap-3 text-sm">
+                                <div>
+                                    <div class="text-xs text-slate-500">Text</div>
+                                    <div class="numeric font-semibold text-slate-900" x-text="formatPercent(eventBlock(selected, 'actual_result')?.return)"></div>
+                                    <div class="numeric text-xs text-slate-500" x-text="formatMoney(eventBlock(selected, 'actual_result')?.pnl)"></div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500">Text</div>
+                                    <div class="numeric font-semibold text-slate-900" x-text="formatPercent(selected?.benchmark_result_12w?.return)"></div>
+                                    <div class="text-xs text-slate-500" x-text="selected?.benchmark || selected?.benchmark_result_12w?.benchmark_id || '--'"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="dr-note-card mt-4">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">SellText</div>
+                        <p class="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700" x-text="selected?.decision_note || 'TextSellTextSellText. '"></p>
+                    </div>
+
+                    <div class="dr-comparison-card mt-4">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">TextTo DateText</div>
+                        <div class="dr-detail-metric-grid mt-3 grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                                <div class="text-xs text-slate-500">30D Text</div>
+                                <div class="numeric font-semibold text-slate-900" x-text="formatPercent(selected?.original_hold_4w?.return)"></div>
+                                <div class="numeric text-xs text-slate-500" x-text="formatMoney(selected?.original_hold_4w?.pnl)"></div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-slate-500">30D Text</div>
+                                <div class="numeric font-semibold text-slate-900" x-text="formatPercent(selected?.actual_result_4w?.return)"></div>
+                                <div class="numeric text-xs text-slate-500" x-text="formatMoney(selected?.actual_result_4w?.pnl)"></div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-slate-500">30D Cash</div>
+                                <div class="numeric font-semibold text-slate-900" x-text="formatPercent(selected?.cash_result_4w?.return)"></div>
+                                <div class="numeric text-xs text-slate-500" x-text="formatMoney(selected?.cash_result_4w?.pnl)"></div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-slate-500">30D Text</div>
+                                <div class="numeric font-semibold text-slate-900" x-text="formatPercent(selected?.benchmark_result_4w?.return)"></div>
+                                <div class="numeric text-xs text-slate-500" x-text="formatMoney(selected?.benchmark_result_4w?.pnl)"></div>
+                            </div>
+                        </div>
+                        <div class="mt-3 flex flex-wrap gap-2 text-xs">
+                            <span class="rounded-full px-2.5 py-1" :class="wrongFlagTone(selected?.sell_decision_wrong_4w)" x-text="wrongFlagText(selected?.sell_decision_wrong_4w, '4W Text', '4W SellText')"></span>
+                            <span class="rounded-full px-2.5 py-1" :class="wrongFlagTone(selected?.redeploy_wrong_4w)" x-text="wrongFlagText(selected?.redeploy_wrong_4w, '4W Text', '4W Text')"></span>
+                            <span class="rounded-full px-2.5 py-1" :class="wrongFlagTone(selected?.sell_decision_wrong_12w)" x-text="wrongFlagText(selected?.sell_decision_wrong_12w, 'To DateText', 'To DateSellText')"></span>
+                            <span class="rounded-full px-2.5 py-1" :class="wrongFlagTone(selected?.redeploy_wrong_12w)" x-text="wrongFlagText(selected?.redeploy_wrong_12w, 'To DateText', 'To DateText')"></span>
+                        </div>
+                    </div>
+
+                    <div class="dr-flow-card mt-4">
+                        <div class="text-xs font-semibold uppercase tracking-wide text-slate-500">Text</div>
+                        <template x-if="!redeployTargets(selected).length">
+                            <p class="mt-2 text-sm text-slate-500">TextBuyText, TextCash/Text. </p>
+                        </template>
+                        <div class="mt-2 flex flex-wrap gap-2">
+                            <template x-for="target in redeployTargets(selected)" :key="`${target.stock_id}-${target.allocated_amount || target.amount || 0}`">
+                                <span class="dr-flow-chip rounded-full px-2.5 py-1 text-xs font-medium" x-text="`${target.buy_week_id || ''} ${target.stock_id} · ${formatMoney(target.allocated_amount || target.amount || 0)}`"></span>
+                            </template>
+                            <template x-if="Number(selected?.drilldown?.fund_flow?.cash_amount_hkd || 0) > 0">
+                                <span class="dr-flow-chip rounded-full px-2.5 py-1 text-xs font-medium" x-text="`Cash/Text · ${formatMoney(selected?.drilldown?.fund_flow?.cash_amount_hkd || 0)}`"></span>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-body text-sm text-slate-500" x-show="!selected">TextSellTextDetails. </div>
+            </aside>
+        </section>
+
+        <section class="grid grid-cols-1 gap-5">
+            <div class="section-card dr-pattern-board">
+                <div class="section-header">
+                    <div>
+                        <h2 class="section-title">Pattern Mining</h2>
+                        <p class="section-description">TextDecisionText, Text, TextResultText, TextSellTextError. </p>
+                    </div>
+                    <div class="text-right text-xs text-slate-500">
+                        <div x-text="`${pattern_mining?.summary?.evaluated_count || 0} evaluated`"></div>
+                        <div x-show="pattern_mining?.summary?.largest_loss_cluster" x-text="`Largest loss cluster: ${patternClusterLabel(pattern_mining?.summary?.largest_loss_cluster)}`"></div>
+                    </div>
+                </div>
+                <div class="section-body grid grid-cols-1 gap-4 xl:grid-cols-4">
+                    <template x-for="group in patternMiningGroups" :key="group.key">
+                        <div class="rounded-lg border border-slate-200 bg-white p-3">
+                            <div class="flex items-center justify-between gap-2">
+                                <div>
+                                    <div class="text-sm font-semibold text-slate-900" x-text="group.label"></div>
+                                    <div class="text-xs text-slate-500" x-text="group.help"></div>
+                                </div>
+                                <span class="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-600" x-text="patternMiningRows(group.key).length"></span>
+                            </div>
+                            <div class="mt-3 space-y-2">
+                                <template x-for="row in patternMiningRows(group.key).slice(0, 4)" :key="`pattern-${group.key}-${row.key}`">
+                                    <div class="rounded-md bg-slate-50 px-3 py-2">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <div class="font-medium text-slate-900" x-text="patternClusterLabel(row)"></div>
+                                            <div class="numeric text-sm font-semibold" :class="signedTone(row.net_contribution || 0)" x-text="formatSignedMoney(row.net_contribution || 0)"></div>
+                                        </div>
+                                        <div class="mt-1 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+                                            <span x-text="`${row.evaluated_count || 0}/${row.event_count || 0} evaluated · ${formatPercent(row.effectiveness_rate)}`"></span>
+                                            <span class="numeric text-red-700" x-show="(row.total_opportunity_cost || 0) > 0" x-text="formatSignedMoney(-(row.total_opportunity_cost || 0))"></span>
+                                        </div>
+                                    </div>
+                                </template>
+                                <div class="rounded-md border border-dashed border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-500" x-show="!patternMiningRows(group.key).length">No evaluated pattern yet.</div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+
+            <div class="section-card dr-pattern-board">
+                <div class="section-header">
+                    <h2 class="section-title">Text</h2>
+                </div>
+                <div class="section-body space-y-3">
+                    <template x-for="row in by_stock.slice(0, 8)" :key="row.stock_id">
+                        <div class="dr-stock-attribution-card rounded-lg border px-4 py-3">
+                            <div class="flex items-center justify-between gap-3">
+                                <div>
+                                    <div class="font-semibold text-slate-900" x-text="row.stock_id"></div>
+                                    <div class="text-xs text-slate-500" x-text="`${row.event_count} TextSell · ${formatMoney(row.sold_capital)} TextWithdrawalText`"></div>
+                                </div>
+                                <div class="numeric font-semibold" :class="signedTone(row.net_contribution || 0)" x-text="formatSignedMoney(row.net_contribution || 0)"></div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </section>
+
+        <section class="section-card dr-week-board">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">W5 TextSell Review</h2>
+                    <p class="section-description">TextWithdrawalText, Opportunity CostTextSellContribution, Text. </p>
+                </div>
+            </div>
+            <div class="section-body space-y-3">
+                <template x-for="week in by_week" :key="week.week_id">
+                    <div class="dr-week-review-card rounded-lg border p-4">
+                        <div class="flex flex-wrap items-center justify-between gap-3">
+                            <div>
+                                <div class="text-lg font-semibold text-slate-900" x-text="week.week_id"></div>
+                                <div class="text-xs text-slate-500" x-text="`${week.event_count} TextSell · TextWithdrawalText ${formatMoney(week.sold_capital)}`"></div>
+                            </div>
+                            <div class="flex gap-4 text-right">
+                                <div>
+                                    <div class="text-xs text-slate-500">Opportunity Cost</div>
+                                    <div class="numeric font-semibold text-red-700" x-text="formatSignedMoney(-(week.total_opportunity_cost || 0))"></div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500">SellContribution</div>
+                                    <div class="numeric font-semibold text-emerald-700" x-text="formatSignedMoney(week.total_value_added || 0)"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-3 grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+                            <template x-for="event in week.events.slice(0, 6)" :key="event.event_id">
+                                <button type="button" class="dr-week-event-card rounded-lg px-3 py-2 text-left" @click="selectEvent(event)">
+                                    <div class="flex items-center justify-between gap-2">
+                                        <span class="font-medium text-slate-900" x-text="event.stock_id"></span>
+                                        <span class="numeric text-xs font-semibold" :class="contributionTone(event)" x-text="formatSignedMoney(eventContribution(event))"></span>
+                                    </div>
+                                    <div class="mt-1 truncate text-xs text-slate-500" x-text="event.decision_note || event.sell_date || '--'"></div>
+                                </button>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function decisionReviewPage() {
+    return {
+        loading: true,
+        error: '',
+        selected: null,
+        selectedWindow: null,
+        selectedBatch: null,
+        selectedAdjustment: null,
+        showFullTimeline: { batch: false, adjustment: false },
+        timelineChartMode: 'absolute',
+        windowMode: 'single_week',
+        selectedMark: 'now',
+        markHorizonOptions: [
+            { key: '30d', label: '30D' },
+            { key: '60d', label: '60D' },
+            { key: '90d', label: '90D' },
+            { key: 'now', label: 'Now' },
+        ],
+        resultFilter: 'all',
+        sortKey: 'contribution',
+        sortDirection: 'desc',
+        summary: {},
+        stage_summary: {},
+        integrity_audit: {},
+        counterfactual_windows: [],
+        checkpoint_windows: [],
+        decision_batches: [],
+        adjustment_events: [],
+        all_events: [],
+        top_mistakes: [],
+        top_effective: [],
+        by_stock: [],
+        by_decision_type: [],
+        by_redeployment_path: [],
+        trim_follow_through: [],
+        pattern_mining: {},
+        patternMiningGroups: [
+            { key: 'by_decision_type', label: 'Decision type', help: 'Text, Text, Text' },
+            { key: 'by_destination', label: 'Destination', help: 'SellText' },
+            { key: 'by_position_size', label: 'Position size', help: 'Text' },
+            { key: 'by_tag', label: 'Outcome tags', help: 'Text, Text, CashText' },
+        ],
+        by_week: [],
+        async init() {
+            await this.load();
+        },
+        async load() {
+            this.loading = true;
+            this.error = '';
+            try {
+                const params = new URLSearchParams({ limit: '12', window_mode: this.windowMode, mark_horizon: this.selectedMark });
+                const response = await fetch(`/api/decision-review?${params.toString()}`, { headers: { 'Accept': 'application/json' } });
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data?.error || 'LoadFailed');
+                }
+                this.windowMode = data?.selected_window_mode || this.windowMode;
+                this.selectedMark = data?.selected_mark_horizon || this.selectedMark;
+                this.summary = data?.summary || {};
+                this.stage_summary = data?.stage_summary || {};
+                this.integrity_audit = data?.integrity_audit || {};
+                this.counterfactual_windows = data?.counterfactual_windows || [];
+                this.checkpoint_windows = data?.checkpoint_windows || [];
+                this.decision_batches = data?.decision_batches || [];
+                this.adjustment_events = data?.adjustment_events || [];
+                this.all_events = data?.all_events || [];
+                this.top_mistakes = data?.top_mistakes || [];
+                this.top_effective = data?.top_effective || [];
+                this.by_stock = data?.by_stock || [];
+                this.by_decision_type = data?.by_decision_type || [];
+                this.by_redeployment_path = data?.by_redeployment_path || [];
+                this.trim_follow_through = data?.trim_follow_through || [];
+                this.pattern_mining = data?.pattern_mining || {};
+                this.by_week = data?.by_week || [];
+                this.selectedWindow = this.decisionWindows()[0] || this.checkpointWindows()[0] || null;
+                this.selectedBatch = this.selectedWindow?.details_batch || this.decision_batches[0] || null;
+                this.selectedAdjustment = this.adjustment_events[0] || null;
+                this.selected = this.top_effective[0] || this.all_events[0] || this.top_mistakes[0] || null;
+            } catch (error) {
+                this.error = error?.message || 'LoadFailed';
+            } finally {
+                this.loading = false;
+            }
+        },
+        filteredEvents() {
+            let rows = this.all_events || [];
+            if (this.resultFilter === 'positive') {
+                rows = rows.filter((event) => this.eventContribution(event) !== null && this.eventContribution(event) >= 0);
+            }
+            if (this.resultFilter === 'negative') {
+                rows = rows.filter((event) => this.eventContribution(event) < 0);
+            }
+            return this.sortedEvents(rows);
+        },
+        sortedEvents(rows) {
+            const direction = this.sortDirection === 'desc' ? -1 : 1;
+            return [...rows].sort((a, b) => {
+                const left = this.sortValue(a, this.sortKey);
+                const right = this.sortValue(b, this.sortKey);
+                if (typeof left === 'number' || typeof right === 'number') {
+                    const leftNum = Number.isFinite(left) ? left : Number.NEGATIVE_INFINITY;
+                    const rightNum = Number.isFinite(right) ? right : Number.NEGATIVE_INFINITY;
+                    if (leftNum === rightNum) return 0;
+                    return leftNum > rightNum ? direction : -direction;
+                }
+                const comparison = String(left || '').localeCompare(String(right || ''), 'en', { numeric: true, sensitivity: 'base' });
+                return comparison * direction;
+            });
+        },
+        sortValue(event, key) {
+            if (key === 'stock_id') return event?.stock_id || '';
+            if (key === 'sell_date') return event?.sell_date || '';
+            if (key === 'sold_capital') return Number(event?.sold_capital ?? Number.NEGATIVE_INFINITY);
+            if (key === 'hold_return') return Number(this.eventBlock(event, 'original_hold')?.return ?? Number.NEGATIVE_INFINITY);
+            if (key === 'selected_mark') return -Number(this.eventOpportunityCost(event) ?? Number.NEGATIVE_INFINITY);
+            if (key === 'actual_return') return Number(this.eventBlock(event, 'actual_result')?.return ?? Number.NEGATIVE_INFINITY);
+            if (key === 'contribution') return this.eventContribution(event);
+            if (key === 'verdict') return this.deterministicVerdictText(event);
+            return '';
+        },
+        setSort(key) {
+            if (this.sortKey === key) {
+                this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+                return;
+            }
+            this.sortKey = key;
+            this.sortDirection = ['sold_capital', 'hold_return', 'selected_mark', 'actual_return', 'contribution'].includes(key) ? 'desc' : 'asc';
+        },
+        sortIndicator(key) {
+            if (this.sortKey !== key) return '↕';
+            return this.sortDirection === 'asc' ? '↑' : '↓';
+        },
+        selectEvent(event) {
+            this.selected = event;
+        },
+        selectWindow(window) {
+            this.selectedWindow = window;
+            this.selectedBatch = window?.details_batch || null;
+            this.showFullTimeline.batch = false;
+        },
+        decisionWindows() {
+            return (this.counterfactual_windows || []).filter((window) => window?.data_state !== 'checkpoint');
+        },
+        checkpointWindows() {
+            return (this.checkpoint_windows || []).length
+                ? this.checkpoint_windows
+                : (this.counterfactual_windows || []).filter((window) => window?.data_state === 'checkpoint');
+        },
+        redeployTargets(event) {
+            return this.eventBlock(event, 'actual_result')?.paired_targets || event?.paired_buys || [];
+        },
+        selectAdjustment(event) {
+            this.selectedAdjustment = event;
+            this.showFullTimeline.adjustment = false;
+        },
+        toggleTimeline(scope) {
+            this.showFullTimeline[scope] = !this.showFullTimeline[scope];
+        },
+        setTimelineChartMode(mode) {
+            this.timelineChartMode = mode === 'normalized' ? 'normalized' : 'absolute';
+        },
+        async setWindowMode(mode) {
+            const nextMode = mode === 'auto' ? 'auto' : 'single_week';
+            if (this.windowMode === nextMode && !this.error) return;
+            this.windowMode = nextMode;
+            await this.load();
+        },
+        async setSelectedMark(mark) {
+            const allowed = new Set((this.markHorizonOptions || []).map(option => option.key));
+            const nextMark = allowed.has(mark) ? mark : 'now';
+            if (this.selectedMark === nextMark && !this.error) return;
+            this.selectedMark = nextMark;
+            await this.load();
+        },
+        selectedWindowMark(window) {
+            const marks = window?.marks || {};
+            return marks[this.selectedMark] || marks.now || {
+                winner_key: window?.winner_key,
+                best_gap_vs_actual_hkd: window?.best_gap_vs_actual_hkd,
+                decision_net_hkd: window?.decision_net_hkd,
+                explanation_lines: window?.explanation_lines || [],
+                end_states: window?.end_states || [],
+            };
+        },
+        selectedMarkDate(window) {
+            const date = window?.mark_dates?.[this.selectedMark];
+            const label = this.markHorizonLabel(this.selectedMark);
+            if (!date) return `${label} mark date --`;
+            return `${label} mark date ${date}`;
+        },
+        markHorizonLabel(mark) {
+            return (this.markHorizonOptions || []).find(option => option.key === mark)?.label || 'Now';
+        },
+        selectedSuffix() {
+            if (this.selectedMark === '30d') return '30d';
+            if (this.selectedMark === '60d') return '60d';
+            if (this.selectedMark === '90d') return '90d';
+            return '12w';
+        },
+        eventBlock(event, prefix) {
+            if (!event) return {};
+            return event?.[`${prefix}_${this.selectedSuffix()}`] || {};
+        },
+        eventOpportunityCost(event) {
+            if (!event) return null;
+            const value = event?.[`opportunity_cost_${this.selectedSuffix()}`];
+            return value === null || value === undefined ? null : Number(value);
+        },
+        selectedEventMarkDate(event) {
+            if (!event) return `${this.markHorizonLabel(this.selectedMark)} mark date --`;
+            if (this.selectedMark === 'now') return 'Now mark';
+            const value = event?.[`mark_${this.selectedMark}_end_date`];
+            return value ? `${this.markHorizonLabel(this.selectedMark)} mark date ${value}` : `${this.markHorizonLabel(this.selectedMark)} mark date --`;
+        },
+        benchmarkPortfolioContributors(window) {
+            const weekend = (this.selectedWindowMark(window)?.end_states || []).find((path) => path?.key === 'benchmark');
+            return weekend?.contributors || [];
+        },
+        dataQualityLabel(quality) {
+            const confidence = quality?.confidence || 'checkpoint';
+            if (confidence === 'high') return 'Data quality: high';
+            if (confidence === 'medium') return 'Data quality: medium';
+            if (confidence === 'low') return 'Data quality: low';
+            return 'Data quality: checkpoint';
+        },
+        dataQualityTone(quality) {
+            const confidence = quality?.confidence || 'checkpoint';
+            if (confidence === 'high') return 'bg-emerald-50 text-emerald-700';
+            if (confidence === 'medium') return 'bg-amber-50 text-amber-800';
+            if (confidence === 'low') return 'bg-red-50 text-red-700';
+            return 'bg-slate-100 text-slate-700';
+        },
+        dataQualitySummary(quality) {
+            if (!quality) return 'No sell events in this window.';
+            return `${quality.now_evaluable_count || 0}/${quality.event_count || 0} Now, ${quality.mark_30d_evaluable_count || 0}/${quality.event_count || 0} 30D evaluable`;
+        },
+        actualBasisLabel(basis) {
+            if (basis === 'cash') return 'Actual basis: cash';
+            if (basis === 'weekend_portfolio') return 'Actual basis: benchmark fallback';
+            if (basis === 'mixed') return 'Actual basis: mixed';
+            if (basis === 'insufficient_data') return 'Actual basis: insufficient data';
+            if (basis === 'manual') return 'Actual basis: manual matching';
+            if (basis === 'auto') return 'Actual basis: auto matching';
+            return 'Actual basis: matched redeploy';
+        },
+        actualBasisTone(basis) {
+            if (basis === 'cash') return 'bg-amber-50 text-amber-800';
+            if (basis === 'weekend_portfolio') return 'bg-blue-50 text-blue-700';
+            if (basis === 'mixed') return 'bg-purple-50 text-purple-700';
+            if (basis === 'insufficient_data') return 'bg-red-50 text-red-700';
+            return 'bg-emerald-50 text-emerald-700';
+        },
+        actualBasisHelp(basis) {
+            if (basis === 'cash') return 'Actual path uses explicit cash outcome because the sell was recorded as cash raising.';
+            if (basis === 'weekend_portfolio') return 'Actual path is a fallback: benchmark outcome is used when paired redeploy data is missing.';
+            if (basis === 'mixed') return 'Actual path combines matched redeploy events with fallback or cash events.';
+            if (basis === 'insufficient_data') return 'Actual path cannot be evaluated from current price/cash data.';
+            if (basis === 'manual') return 'Actual path uses manually paired follow-on buys.';
+            if (basis === 'auto') return 'Actual path uses auto-paired follow-on buys from the cash ledger.';
+            return 'Actual path uses identified redeployment P/L from paired follow-on buys.';
+        },
+        diagnosisLabel(issue) {
+            if (issue === 'sell_timing') return 'SellText';
+            if (issue === 'cash_idle') return 'CashText';
+            if (issue === 'rebuy_quality') return 'Text';
+            if (issue === 'effective') return 'Text';
+            if (issue === 'insufficient_data') return 'Text';
+            return 'TextResult';
+        },
+        diagnosisTone(issue) {
+            if (issue === 'effective') return 'bg-emerald-50 text-emerald-700';
+            if (issue === 'cash_idle') return 'bg-amber-50 text-amber-800';
+            if (issue === 'sell_timing' || issue === 'rebuy_quality') return 'bg-red-50 text-red-700';
+            return 'bg-slate-100 text-slate-700';
+        },
+        windowStateLabel(window) {
+            if (window?.data_state === 'insufficient_data') return 'Text';
+            if (window?.data_state === 'checkpoint') return 'StatusText';
+            if (window?.winner_key === 'actual_redeploy') return 'Text';
+            return 'Text';
+        },
+        windowStateTone(window) {
+            if (window?.data_state !== 'ok') return 'bg-slate-100 text-slate-700';
+            return window?.winner_key === 'actual_redeploy' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700';
+        },
+        universeLabel(key) {
+            if (key === 'hold_original') return 'Text, Text';
+            if (key === 'actual_redeploy') return 'Text';
+            if (key === 'sell_to_cash') return 'SellTextCash';
+            if (key === 'benchmark') return 'Text';
+            if (key === 'rebuy_original_leaders') return 'SellText';
+            return '--';
+        },
+        stageLabel(key) {
+            if (key === 'sell_judgment') return 'Text';
+            if (key === 'cash_ledger') return 'CashText';
+            if (key === 're_risk_quality') return 'Text';
+            if (key === 'effective') return 'Text';
+            return 'TextResult';
+        },
+        verdictTagLabel(tag) {
+            if (tag === 'sell_point_wrong') return 'Text';
+            if (tag === 'cash_right_redeploy_late') return 'TextCashText, Text';
+            if (tag === 'cash_was_right') return 'TextCashText';
+            if (tag === 'rerisk_wrong') return 'Text re-risk';
+            if (tag === 'hold_would_win') return 'Text';
+            if (tag === 'actual_best') return 'TextTradesText';
+            return 'ResultText';
+        },
+        verdictTagTone(tag) {
+            if (tag === 'actual_best') return 'bg-emerald-50 text-emerald-700';
+            if (tag === 'cash_was_right' || tag === 'cash_right_redeploy_late') return 'bg-amber-50 text-amber-800';
+            if (tag === 'sell_point_wrong' || tag === 'rerisk_wrong' || tag === 'hold_would_win') return 'bg-red-50 text-red-700';
+            return 'bg-slate-100 text-slate-700';
+        },
+        universeShortLabel(key) {
+            if (key === 'actual_redeploy') return 'Text';
+            if (key === 'hold_original') return 'Text';
+            if (key === 'sell_to_cash') return 'CashText';
+            if (key === 'rebuy_original_leaders') return 'Text';
+            return 'Text';
+        },
+        timelineUniverseValue(row, key) {
+            return Number(row?.universes?.[key]?.current_total_hkd || 0);
+        },
+        timelineValueForMode(row, key) {
+            if (this.timelineChartMode === 'normalized') {
+                return Number(row?.universes?.[key]?.return_pct || 0) * 100;
+            }
+            return this.timelineUniverseValue(row, key);
+        },
+        timelineSpreadVsBest(row) {
+            const actual = this.timelineUniverseValue(row, 'actual_redeploy');
+            const candidates = ['hold_original', 'sell_to_cash', 'rebuy_original_leaders'].map((key) => this.timelineUniverseValue(row, key));
+            const best = Math.max(actual, ...candidates);
+            return actual - best;
+        },
+        timelineChartRange(rows) {
+            const values = [];
+            for (const row of rows || []) {
+                for (const key of ['actual_redeploy', 'hold_original', 'sell_to_cash', 'rebuy_original_leaders']) {
+                    values.push(this.timelineValueForMode(row, key));
+                }
+            }
+            const finite = values.filter((value) => Number.isFinite(value));
+            if (!finite.length) return { min: 0, max: 1 };
+            const min = Math.min(...finite);
+            const max = Math.max(...finite);
+            if (min === max) return { min: min * 0.98, max: max * 1.02 || 1 };
+            const pad = (max - min) * 0.12;
+            return { min: min - pad, max: max + pad };
+        },
+        timelineX(index, total) {
+            if (!total || total <= 1) return 24;
+            return 24 + ((736 - 24) * index) / (total - 1);
+        },
+        timelineY(value, min, max) {
+            const safeValue = Number(value || 0);
+            const safeMin = Number(min || 0);
+            const safeMax = Number(max || 1);
+            const ratio = safeMax === safeMin ? 0.5 : (safeValue - safeMin) / (safeMax - safeMin);
+            return 152 - ratio * (152 - 18);
+        },
+        timelineChartData(rows) {
+            const source = rows || [];
+            const range = this.timelineChartRange(source);
+            const specs = [
+                { key: 'actual_redeploy', stroke: '#15212b' },
+                { key: 'hold_original', stroke: '#3b82f6' },
+                { key: 'sell_to_cash', stroke: '#d97706' },
+                { key: 'rebuy_original_leaders', stroke: '#059669' },
+            ];
+            return specs.map((spec) => ({
+                ...spec,
+                points: source.map((row, index) => ({
+                    x: this.timelineX(index, source.length),
+                    y: this.timelineY(this.timelineValueForMode(row, spec.key), range.min, range.max),
+                })),
+            }));
+        },
+        timelinePathForKey(rows, key) {
+            const source = rows || [];
+            if (!source.length) return '';
+            const range = this.timelineChartRange(source);
+            const points = source.map((row, index) => ({
+                x: this.timelineX(index, source.length),
+                y: this.timelineY(this.timelineValueForMode(row, key), range.min, range.max),
+            }));
+            return this.timelinePathD(points);
+        },
+        timelinePathD(points) {
+            if (!points?.length) return '';
+            return points.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+        },
+        timelineBestAlternativeKey(row) {
+            const keys = ['hold_original', 'sell_to_cash', 'rebuy_original_leaders'];
+            return keys
+                .map((key) => ({ key, value: this.timelineValueForMode(row, key) }))
+                .sort((a, b) => b.value - a.value)[0]?.key || 'hold_original';
+        },
+        timelineGapAreaD(rows) {
+            const source = rows || [];
+            const divergence = this.timelineDivergencePoint(source);
+            if (!divergence) return '';
+            const range = this.timelineChartRange(source);
+            const after = source.slice(divergence.index);
+            if (after.length < 2) return '';
+            const actualPoints = after.map((row, offset) => {
+                const index = divergence.index + offset;
+                return {
+                    x: this.timelineX(index, source.length),
+                    y: this.timelineY(this.timelineValueForMode(row, 'actual_redeploy'), range.min, range.max),
+                };
+            });
+            const bestPoints = after.map((row, offset) => {
+                const index = divergence.index + offset;
+                const bestKey = this.timelineBestAlternativeKey(row);
+                return {
+                    x: this.timelineX(index, source.length),
+                    y: this.timelineY(this.timelineValueForMode(row, bestKey), range.min, range.max),
+                };
+            });
+            const first = actualPoints[0];
+            const actualPath = actualPoints.map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ');
+            const bestPath = [...bestPoints].reverse().map((point) => `L ${point.x} ${point.y}`).join(' ');
+            return `${actualPath} ${bestPath} Z`;
+        },
+        timelineDivergencePoint(rows) {
+            const source = rows || [];
+            for (let index = 0; index < source.length; index += 1) {
+                const row = source[index];
+                const actual = this.timelineValueForMode(row, 'actual_redeploy');
+                const bestAlternative = Math.max(
+                    this.timelineValueForMode(row, 'hold_original'),
+                    this.timelineValueForMode(row, 'sell_to_cash'),
+                    this.timelineValueForMode(row, 'rebuy_original_leaders'),
+                );
+                if (actual < bestAlternative) {
+                    return { ...row, index, actual, bestAlternative };
+                }
+            }
+            return null;
+        },
+        timelineKeyPoints(rows) {
+            const source = [...(rows || [])];
+            if (source.length <= 4) return source;
+            const picks = [];
+            const pushUnique = (row) => {
+                if (!row) return;
+                if (!picks.some((item) => item.label === row.label && item.date === row.date)) picks.push(row);
+            };
+            pushUnique(source[0]);
+            const biggestGap = [...source].sort((a, b) => this.timelineSpreadVsBest(a) - this.timelineSpreadVsBest(b))[0];
+            pushUnique(biggestGap);
+            const leaderChange = source.find((row, index) => index > 0 && row.leader_key !== source[index - 1].leader_key);
+            pushUnique(leaderChange);
+            pushUnique(source[Math.floor(source.length / 2)]);
+            pushUnique(source[source.length - 1]);
+            return picks.sort((a, b) => String(a.date || '').localeCompare(String(b.date || '')));
+        },
+        timelineDisplayRows(rows, scope) {
+            return this.showFullTimeline[scope] ? (rows || []) : this.timelineKeyPoints(rows || []);
+        },
+        universeRows(counterfactuals) {
+            const actual = Number(counterfactuals?.actual_redeploy?.current_total_hkd || 0);
+            return [
+                { key: 'actual_redeploy', label: this.universeLabel('actual_redeploy'), current_total_hkd: Number(counterfactuals?.actual_redeploy?.current_total_hkd || 0), return_pct: counterfactuals?.actual_redeploy?.return_pct, vs_actual_hkd: 0 },
+                { key: 'hold_original', label: this.universeLabel('hold_original'), current_total_hkd: Number(counterfactuals?.hold_original?.current_total_hkd || 0), return_pct: counterfactuals?.hold_original?.return_pct, vs_actual_hkd: Number(counterfactuals?.hold_original?.vs_actual_hkd ?? (Number(counterfactuals?.hold_original?.current_total_hkd || 0) - actual)) },
+                { key: 'sell_to_cash', label: this.universeLabel('sell_to_cash'), current_total_hkd: Number(counterfactuals?.sell_to_cash?.current_total_hkd || 0), return_pct: counterfactuals?.sell_to_cash?.return_pct, vs_actual_hkd: Number(counterfactuals?.sell_to_cash?.vs_actual_hkd ?? (Number(counterfactuals?.sell_to_cash?.current_total_hkd || 0) - actual)) },
+                { key: 'rebuy_original_leaders', label: this.universeLabel('rebuy_original_leaders'), current_total_hkd: Number(counterfactuals?.rebuy_original_leaders?.current_total_hkd || 0), return_pct: counterfactuals?.rebuy_original_leaders?.return_pct, vs_actual_hkd: Number(counterfactuals?.rebuy_original_leaders?.vs_actual_hkd ?? (Number(counterfactuals?.rebuy_original_leaders?.current_total_hkd || 0) - actual)) },
+            ];
+        },
+        holdingChangeRows(changes) {
+            const rows = [];
+            ['sold', 'reduced', 'added', 'increased'].forEach((bucket) => {
+                (changes?.[bucket] || []).forEach((row) => rows.push({ ...row, bucket }));
+            });
+            return rows;
+        },
+        holdingChangeCount(changes) {
+            return this.holdingChangeRows(changes).length;
+        },
+        holdingChangeLabel(bucket) {
+            return { sold: 'Sold', reduced: 'Reduced', added: 'Added', increased: 'Increased' }[bucket] || bucket || '--';
+        },
+        holdingChangeTone(bucket) {
+            if (bucket === 'sold' || bucket === 'reduced') return 'bg-red-50 text-red-700';
+            if (bucket === 'added' || bucket === 'increased') return 'bg-emerald-50 text-emerald-700';
+            return 'bg-slate-100 text-slate-700';
+        },
+        signedTone(value) {
+            const num = Number(value || 0);
+            if (num > 0) return 'text-emerald-700';
+            if (num < 0) return 'text-red-700';
+            return 'text-slate-700';
+        },
+        eventContribution(event) {
+            const opportunityCost = this.eventOpportunityCost(event);
+            if (opportunityCost === null || opportunityCost === undefined || Number.isNaN(opportunityCost)) return null;
+            return -opportunityCost;
+        },
+        mark30dContribution(event) {
+            if (event?.opportunity_cost_30d === null || event?.opportunity_cost_30d === undefined) return null;
+            return -(Number(event.opportunity_cost_30d));
+        },
+        markNowGap(event) {
+            const now = this.eventContribution(event);
+            const mark30d = this.mark30dContribution(event);
+            if (now === null || mark30d === null) return null;
+            return now - mark30d;
+        },
+        ifHeldReturn(event) {
+            const value = this.eventBlock(event, 'original_hold')?.return;
+            if (value === null || value === undefined || value === '') return null;
+            return Number(value);
+        },
+        actualPathReturn(event) {
+            const value = this.eventBlock(event, 'actual_result')?.return;
+            if (value === null || value === undefined || value === '') return null;
+            return Number(value);
+        },
+        pathSpreadReturn(event) {
+            return this.eventContribution(event);
+        },
+        pathSpreadPct(event) {
+            const sold = Number(event?.sold_capital || 0);
+            const spread = this.pathSpreadReturn(event);
+            if (!sold || spread === null || spread === undefined) return null;
+            return spread / sold;
+        },
+        pathSpreadLabel(event) {
+            const spread = this.pathSpreadReturn(event);
+            if (spread === null || spread === undefined) return 'Text';
+            if (spread > 0) return 'Text';
+            if (spread < 0) return 'Opportunity Cost';
+            return 'Text';
+        },
+        pathSpreadTone(event) {
+            const spread = this.pathSpreadReturn(event);
+            if (spread === null || spread === undefined) return 'text-slate-500';
+            if (spread > 0) return 'text-emerald-700';
+            if (spread < 0) return 'text-red-700';
+            return 'text-slate-700';
+        },
+        contributionTone(event) {
+            const contribution = this.eventContribution(event);
+            if (contribution === null) return 'text-slate-500';
+            return contribution >= 0 ? 'text-emerald-700' : 'text-red-700';
+        },
+        contributionBadgeTone(event) {
+            const contribution = this.eventContribution(event);
+            if (contribution === null) return 'bg-slate-100 text-slate-600';
+            return contribution >= 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700';
+        },
+        waterfallStepTone(step) {
+            const value = Number(step?.value_hkd || 0);
+            if (value > 0) return 'text-emerald-700';
+            if (value < 0) return 'text-red-700';
+            return 'text-slate-700';
+        },
+        waterfallStepWidth(step, steps) {
+            const values = (steps || []).map((row) => Math.abs(Number(row?.value_hkd || 0))).filter((value) => Number.isFinite(value));
+            const maxValue = Math.max(1, ...values);
+            return Math.max(8, Math.round((Math.abs(Number(step?.value_hkd || 0)) / maxValue) * 100));
+        },
+        patternMiningRows(key) {
+            return this.pattern_mining?.[key] || [];
+        },
+        patternClusterLabel(row) {
+            if (!row) return '--';
+            if (row.group === 'decision_type' || row.decision_type) return row.decision_type || row.key || '--';
+            if (row.group === 'destination' || row.destination_type) return row.destination_type || row.key || '--';
+            if (row.group === 'position_size' || row.bucket) return row.bucket || row.key || '--';
+            if (row.group === 'tag' || row.tag) return row.tag || row.key || '--';
+            return row.key || '--';
+        },
+        gapTone(event) {
+            const gap = this.markNowGap(event);
+            if (gap === null) return 'text-slate-500';
+            return gap >= 0 ? 'text-emerald-600' : 'text-red-600';
+        },
+        stageContributionTone(value) {
+            if (value === null || value === undefined) return 'text-slate-500';
+            return Number(value) >= 0 ? 'text-emerald-700' : 'text-red-700';
+        },
+        wrongFlagTone(value) {
+            if (value === null || value === undefined) return 'bg-slate-100 text-slate-600';
+            return value ? 'bg-red-50 text-red-700' : 'bg-emerald-50 text-emerald-700';
+        },
+        wrongFlagText(value, negativeText, positiveText) {
+            if (value === null || value === undefined) return 'Text';
+            return value ? negativeText : positiveText;
+        },
+        sellDecisionContribution(event) {
+            const value = event?.[`sell_decision_impact_${this.selectedSuffix()}`];
+            if (value === null || value === undefined) return null;
+            return Number(value);
+        },
+        redeployContribution(event) {
+            const value = event?.[`redeploy_impact_${this.selectedSuffix()}`];
+            if (value === null || value === undefined) return null;
+            return Number(value);
+        },
+        matchedCoverage(event) {
+            const sold = Number(event?.sold_capital || 0);
+            const matched = Number(this.eventBlock(event, 'actual_result')?.matched_amount || 0);
+            if (!sold) return null;
+            return matched / sold;
+        },
+        netContribution() {
+            return Number(this.summary?.net_result || 0);
+        },
+        verdictText(event) {
+            const contribution = this.eventContribution(event);
+            if (contribution === null) return 'Text';
+            if (contribution < 0) return 'Opportunity Cost';
+            if (contribution > 0) return 'Text';
+            return 'ResultText';
+        },
+        deterministicVerdictText(event) {
+            return event?.deterministic_verdict?.label || this.verdictText(event);
+        },
+        deterministicVerdictTone(verdict) {
+            const severity = verdict?.severity || 'neutral';
+            if (severity === 'positive') return 'bg-emerald-50 text-emerald-700';
+            if (severity === 'negative') return 'bg-red-50 text-red-700';
+            if (severity === 'warning') return 'bg-amber-50 text-amber-800';
+            return 'bg-slate-100 text-slate-600';
+        },
+        formatMoney(value) {
+            const num = Number(value || 0);
+            const sign = num < 0 ? '-' : '';
+            return `${sign}${Math.abs(num).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+        },
+        formatSignedMoney(value) {
+            const num = Number(value || 0);
+            const sign = num > 0 ? '+' : num < 0 ? '-' : '';
+            return `${sign}${Math.abs(num).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+        },
+        formatShares(value) {
+            return Number(value || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 4 });
+        },
+        formatSignedShares(value) {
+            const num = Number(value || 0);
+            const sign = num > 0 ? '+' : num < 0 ? '-' : '';
+            return `${sign}${Math.abs(num).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 4 })}`;
+        },
+        formatPercent(value) {
+            if (value === null || value === undefined || value === '') return '--';
+            return `${(Number(value) * 100).toFixed(2)}%`;
+        },
+    };
+}
+</script>
+{% endblock %}

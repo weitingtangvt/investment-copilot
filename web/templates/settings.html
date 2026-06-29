@@ -1,0 +1,808 @@
+{% extends "base.html" %}
+
+{% block title %}API Settings - TextResearchText{% endblock %}
+
+{% block content %}
+<div class="space-y-6 control-room-shell" x-data="settingsPage()" x-init="init()">
+    <section class="hero-band">
+        <div class="page-header">
+            <div>
+                <div class="page-kicker">TextSettings</div>
+                <h1 class="page-title">TextSettings</h1>
+                <p class="page-subtitle">TextCurrentText, OpenAI Compatible Text, NewsText. Text, Text. </p>
+            </div>
+            <div class="toolbar">
+                <button type="button" @click="save()" :disabled="saving" class="btn-primary disabled:opacity-50">
+                    <span x-show="!saving">SaveSettings</span>
+                    <span x-show="saving">SaveText...</span>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <div class="summary-strip control-status-strip">
+        <div class="summary-item">
+            <div class="summary-label">CurrentText</div>
+            <div class="summary-value" x-text="getActiveModelDisplay()"></div>
+            <div class="summary-note">CurrentText</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">Text</div>
+            <div class="summary-value numeric" x-text="customModels.length"></div>
+            <div class="summary-note">Text</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">NewsText</div>
+            <div class="summary-value numeric" x-text="newsSourceDiagnostics.filter(item => item.status === 'ready').length"></div>
+            <div class="summary-note">CurrentTextStatusText</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 control-room-grid">
+        <section class="section-card xl:col-span-4 control-room-panel">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">CurrentText</h2>
+                    <p class="section-description">TextCurrentText. </p>
+                </div>
+                <button @click="showModelSelector = !showModelSelector" class="btn-secondary">
+                    Text
+                </button>
+            </div>
+            <div class="section-body space-y-4">
+                <div class="surface-panel">
+                    <div class="metric-label">Active Model</div>
+                    <div class="metric-value text-[1.5rem] leading-8" x-text="getActiveModelDisplay()"></div>
+                    <div class="metric-note">DefaultText OpenAI Compatible Text, CurrentTextDefaultText GPT-5.4, Text. </div>
+                </div>
+                <div class="meta-kv">
+                    <div class="meta-kv-item">
+                        <div class="meta-kv-label">Provider</div>
+                        <div class="meta-kv-value">GPT-5.4 Default</div>
+                    </div>
+                    <div class="meta-kv-item">
+                        <div class="meta-kv-label">Text</div>
+                        <div class="meta-kv-value numeric" x-text="customModels.length"></div>
+                    </div>
+                </div>
+                <div x-show="showModelSelector" class="list-stack">
+                    <div @click="switchModel('gpt53')"
+                         :class="activeModel === 'gpt53' ? 'border-blue-500 bg-blue-50' : 'list-row-muted'"
+                         class="list-row cursor-pointer transition">
+                        <div>
+                            <div class="font-semibold text-slate-900">OpenAI Compatible</div>
+                            <div class="mt-1 text-xs text-slate-500">DefaultText GPT-5.4</div>
+                        </div>
+                        <span class="status-badge" :class="activeModel === 'gpt53' ? 'status-positive' : 'status-neutral'">Text</span>
+                    </div>
+                    <template x-for="model in customModels" :key="model.name">
+                        <div @click="switchModel(model.name)"
+                             :class="activeModel === model.name ? 'border-blue-500 bg-blue-50' : 'list-row-muted'"
+                             class="list-row cursor-pointer transition">
+                            <div>
+                                <div class="font-semibold text-slate-900" x-text="model.name"></div>
+                                <div class="mt-1 text-xs text-slate-500 mono" x-text="model.model"></div>
+                            </div>
+                            <span class="status-badge" :class="activeModel === model.name ? 'status-positive' : 'status-neutral'">Text</span>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </section>
+
+        <section class="section-card xl:col-span-8 control-room-panel">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Text</h2>
+                    <p class="section-description">LLM, NewsText, Text. </p>
+                </div>
+            </div>
+            <div class="section-body space-y-6">
+                <div class="form-grid md:grid-cols-2 control-config-grid">
+                    <div class="surface-panel-muted md:col-span-2">
+                        <label class="field-label">LLM Provider</label>
+                        <div class="control-input flex items-center bg-slate-50 text-slate-600">OpenAI Compatible(Text)</div>
+                        <p class="field-hint">TextCurrentText OpenAI Compatible Text, DefaultText `gpt-5.4`. </p>
+                    </div>
+
+                    <div class="surface-panel">
+                        <label class="field-label">OpenAI Compatible API Key</label>
+                        <input type="password"
+                            x-model="gpt53Key"
+                            @input="gpt53Dirty = true"
+                            :placeholder="hasGpt53Key && !gpt53Dirty ? 'Text, Text' : 'Text API Key Text'"
+                            class="control-input">
+                        <p class="field-hint">Text OpenAI Text OpenAI-compatible Text. </p>
+                    </div>
+
+                    <div class="surface-panel">
+                        <label class="field-label">DefaultText</label>
+                        <input type="text"
+                            x-model="gpt53Model"
+                            @input="gpt53ModelDirty = true"
+                            placeholder="gpt-5.4"
+                            class="control-input">
+                        <p class="field-hint">Text, Text `gpt-5.4`; Text `gpt-5.3`, `gpt-5.2`. </p>
+                    </div>
+
+                    <div class="surface-panel md:col-span-2">
+                        <label class="field-label">OpenAI Compatible Base URL</label>
+                        <input type="text"
+                            x-model="gpt53BaseUrl"
+                            @input="gpt53BaseUrlDirty = true"
+                            placeholder="https://vpsairobot.com/v1"
+                            class="control-input mono">
+                        <p class="field-hint">Text API Text. </p>
+                    </div>
+
+                    <div class="surface-panel">
+                        <label class="field-label">News API Key</label>
+                        <input type="password"
+                            x-model="newsapiKey"
+                            @input="newsapiDirty = true"
+                            :placeholder="hasNewsapiKey && !newsapiDirty ? 'Text, Text' : 'Text Key Text'"
+                            class="control-input">
+                        <p class="field-hint">Text, Text <a href="https://newsapi.org/docs" target="_blank" class="text-blue-600 hover:underline">News API</a>. </p>
+                    </div>
+
+                    <div class="surface-panel">
+                        <label class="field-label">Tavily API Key</label>
+                        <input type="password"
+                            x-model="tavilyKey"
+                            @input="tavilyDirty = true"
+                            :placeholder="hasTavilyKey && !tavilyDirty ? 'Text, Text' : 'Text Key Text'"
+                            class="control-input">
+                        <p class="field-hint">TextSearchText, Text <a href="https://tavily.com" target="_blank" class="text-blue-600 hover:underline">Tavily</a>. </p>
+                    </div>
+
+                    <div class="surface-panel">
+                        <label class="field-label">NewsText</label>
+                        <select x-model="newsAggregationStrategy" class="control-select">
+                            <option value="priority">Text</option>
+                            <option value="merge">Text</option>
+                        </select>
+                        <p class="field-hint">Text: Tavily &gt; News API &gt; Google RSS &gt; LLM Search. </p>
+                    </div>
+
+                    <div class="surface-panel">
+                        <label class="field-label">Text</label>
+                        <input type="number" step="0.01" min="0"
+                            x-model="usdToHkdRate"
+                            @input="usdToHkdRateDirty = true"
+                            placeholder="7.8"
+                            class="control-input numeric">
+                        <p class="field-hint">TextAnalysisTextHoldingsText. </p>
+                    </div>
+
+                    <div class="surface-panel">
+                        <label class="field-label">Text</label>
+                        <input type="number" step="0.01" min="0"
+                            x-model="eurToHkdRate"
+                            @input="eurToHkdRateDirty = true"
+                            placeholder="8.4"
+                            class="control-input numeric">
+                        <p class="field-hint">TextStock(.AS / .DE)HoldingsText. </p>
+                    </div>
+                </div>
+
+                <div class="surface-panel-muted">
+                    <div class="control-toggle-row">
+                        <input type="checkbox" id="newsUseAiSearch" x-model="newsUseAiSearch" class="control-checkbox">
+                        <div class="flex-1">
+                            <label for="newsUseAiSearch" class="field-label mb-1">Text AI SearchNews</label>
+                            <p class="section-note">TextNewsText. </p>
+                        </div>
+                    </div>
+                    <div class="control-toggle-row">
+                        <input type="checkbox" id="newsAiEnrich" x-model="newsAiEnrich" class="control-checkbox">
+                        <div class="flex-1">
+                            <label for="newsAiEnrich" class="field-label mb-1">News AI Text</label>
+                            <p class="section-note">TextNewsTextSummary, Text LLM Text. </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <section class="section-card control-room-panel">
+        <div class="section-header">
+            <div>
+                <h2 class="section-title">Text</h2>
+                <p class="section-description">Text OpenAI Compatible API Text, Text. </p>
+            </div>
+            <button @click="showAddModel = true" x-show="!showAddModel" class="btn-secondary">
+                Text
+            </button>
+        </div>
+        <div class="section-body space-y-4">
+            <div x-show="customModels.length > 0" class="list-stack">
+                <template x-for="model in customModels" :key="model.name">
+                    <div class="list-row list-row-muted">
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h3 class="font-semibold text-slate-900" x-text="model.name"></h3>
+                                <span x-show="model.has_api_key" class="status-badge status-positive">API Key Text</span>
+                            </div>
+                            <p class="mt-2 text-xs text-slate-500 mono" x-text="model.model"></p>
+                            <p class="mt-1 text-xs text-slate-400 mono" x-text="model.base_url"></p>
+                        </div>
+                        <div class="toolbar">
+                            <button @click="testCustomModel(model.name)" class="btn-secondary">Text</button>
+                            <button @click="deleteCustomModel(model.name)" class="btn-ghost text-red-600">Text</button>
+                        </div>
+                    </div>
+                </template>
+            </div>
+
+            <div x-show="customModels.length === 0 && !showAddModel" class="empty-state section-card-muted">
+                <div class="empty-icon mono">AI</div>
+                <p class="text-sm">Text. </p>
+            </div>
+
+            <div x-show="showAddModel" class="surface-panel-muted">
+                <div class="form-grid md:grid-cols-2">
+                    <div>
+                        <label class="field-label">Text</label>
+                        <input type="text" x-model="newModel.name" placeholder="Text: Gemini Pro" class="control-input">
+                    </div>
+                    <div>
+                        <label class="field-label">Text</label>
+                        <input type="text" x-model="newModel.model" placeholder="Text: gemini-3-pro-preview" class="control-input mono">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="field-label">Base URL</label>
+                        <input type="text" x-model="newModel.base_url" placeholder="https://once.novai.su" class="control-input mono">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="field-label">API Key</label>
+                        <input type="password" x-model="newModel.api_key" placeholder="sk-..." class="control-input">
+                    </div>
+                </div>
+                <div class="toolbar mt-4">
+                    <button @click="saveCustomModel()" :disabled="savingCustomModel" class="btn-primary disabled:opacity-50">
+                        <span x-show="!savingCustomModel">SaveText</span>
+                        <span x-show="savingCustomModel">SaveText...</span>
+                    </button>
+                    <button @click="cancelAddModel()" class="btn-secondary">Cancel</button>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <p class="text-sm text-red-600" x-show="customModelError" x-text="customModelError"></p>
+                <p class="text-sm text-green-600" x-show="customModelSuccess" x-text="customModelSuccess"></p>
+                <p class="text-sm text-slate-500" x-show="saved">TextSave. </p>
+                <p class="text-sm text-red-600" x-show="error" x-text="error"></p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-card control-room-panel">
+        <div class="section-header">
+            <div>
+                <h2 class="section-title">IMA Text</h2>
+                <p class="section-description">Text, CommunityText, Weekly ReviewTextWatchTextManualText IMA Text. </p>
+            </div>
+        </div>
+        <div class="section-body">
+            <div class="form-grid md:grid-cols-2">
+                <div class="surface-panel">
+                    <label class="field-label">IMA Client ID</label>
+                    <input type="text"
+                        x-model="imaClientId"
+                        @input="imaClientIdDirty = true"
+                        placeholder="Text IMA Client ID"
+                        class="control-input mono">
+                    <p class="field-hint">Text, SaveText, ReviewTextWatchText. </p>
+                </div>
+
+                <div class="surface-panel">
+                    <label class="field-label">IMA API Key</label>
+                    <input type="password"
+                        x-model="imaApiKey"
+                        @input="imaApiKeyDirty = true"
+                        :placeholder="hasImaApiKey && !imaApiKeyDirty ? 'Text, Text' : 'Text IMA API Key Text'"
+                        class="control-input">
+                    <p class="field-hint">SaveTextAutoTextCurrentText, Text. </p>
+                </div>
+
+                <div class="surface-panel-muted md:col-span-2">
+                    <div class="meta-kv">
+                        <div class="meta-kv-item">
+                            <div class="meta-kv-label">TextStatus</div>
+                            <div class="meta-kv-value" x-text="imaConfigured ? 'Text' : 'Text'"></div>
+                        </div>
+                        <div class="meta-kv-item">
+                            <div class="meta-kv-label">Text</div>
+                            <div class="meta-kv-value" x-text="imaKnowledgeBaseName || 'Text'"></div>
+                        </div>
+                    </div>
+                    <p class="field-hint mt-3">Current V1 Text OpenAPI Text, Text markdown Text. </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-card control-room-panel">
+        <div class="section-header">
+            <div>
+                <h2 class="section-title">IBKR Trades Import</h2>
+                <p class="section-description">UploadText IBKR Text CSV, AutoTextTradeLedger. CurrentText source of truth, TextHoldings audit. </p>
+            </div>
+        </div>
+        <div class="section-body space-y-4">
+            <div class="surface-panel-muted">
+                <label class="field-label">IBKR CSV Text</label>
+                <div class="toolbar mt-2">
+                    <input type="file"
+                           accept=".csv,text/csv"
+                           multiple
+                           x-ref="ibkrCsvFiles"
+                           class="control-input"
+                           @change="ibkrImportError = ''; ibkrImportSuccess = ''">
+                    <button type="button"
+                            @click="importIbkrTrades()"
+                            :disabled="ibkrImporting"
+                            class="btn-primary disabled:opacity-50">
+                        <span x-show="!ibkrImporting">Import Trades</span>
+                        <span x-show="ibkrImporting">ImportText...</span>
+                    </button>
+                </div>
+                <p class="field-hint">Text IBKR Activity/Flex Query Text Trades CSV TextUpload. Text broker, trade id, Text, Ticker, Text, Text. </p>
+            </div>
+
+            <div class="summary-strip control-status-strip">
+                <div class="summary-item">
+                    <div class="summary-label">Text</div>
+                    <div class="summary-value numeric" x-text="ibkrLedger.summary.trade_count || 0"></div>
+                    <div class="summary-note">Text source ledger</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">ImportText</div>
+                    <div class="summary-value numeric" x-text="ibkrLedger.summary.import_count || 0"></div>
+                    <div class="summary-note">History CSV ImportText</div>
+                </div>
+                <div class="summary-item">
+                    <div class="summary-label">TextImport</div>
+                    <div class="summary-value text-sm" x-text="ibkrLedger.summary.last_imported_at || 'TextImport'"></div>
+                    <div class="summary-note">Text audit Text</div>
+                </div>
+            </div>
+
+            <div x-show="ibkrImportSummary" class="surface-panel">
+                <div class="meta-kv">
+                    <div class="meta-kv-item">
+                        <div class="meta-kv-label">Text</div>
+                        <div class="meta-kv-value numeric" x-text="ibkrImportSummary.recognized_count || 0"></div>
+                    </div>
+                    <div class="meta-kv-item">
+                        <div class="meta-kv-label">Text</div>
+                        <div class="meta-kv-value numeric" x-text="ibkrImportSummary.inserted_count || 0"></div>
+                    </div>
+                    <div class="meta-kv-item">
+                        <div class="meta-kv-label">Text</div>
+                        <div class="meta-kv-value numeric" x-text="ibkrImportSummary.duplicate_count || 0"></div>
+                    </div>
+                    <div class="meta-kv-item">
+                        <div class="meta-kv-label">Error</div>
+                        <div class="meta-kv-value numeric" x-text="ibkrImportSummary.error_count || 0"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-2">
+                <p class="text-sm text-green-600" x-show="ibkrImportSuccess" x-text="ibkrImportSuccess"></p>
+                <p class="text-sm text-red-600" x-show="ibkrImportError" x-text="ibkrImportError"></p>
+            </div>
+
+            <div x-show="ibkrLedger.trades.length === 0" class="empty-state section-card-muted p-6 text-sm text-slate-500">
+                TextImport IBKR trades. 
+            </div>
+            <div x-show="ibkrLedger.trades.length > 0" class="surface-panel overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="text-left text-xs uppercase tracking-wide text-slate-500">
+                        <tr>
+                            <th class="py-2 pr-4">Date</th>
+                            <th class="py-2 pr-4">Ticker</th>
+                            <th class="py-2 pr-4">Text</th>
+                            <th class="py-2 pr-4 text-right">Text</th>
+                            <th class="py-2 pr-4 text-right">Text</th>
+                            <th class="py-2 pr-4">Text</th>
+                            <th class="py-2 pr-4">Text</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <template x-for="trade in ibkrLedger.trades.slice(0, 10)" :key="trade.dedupe_key">
+                            <tr>
+                                <td class="py-2 pr-4 mono" x-text="trade.trade_date || '-'"></td>
+                                <td class="py-2 pr-4 font-semibold text-slate-900" x-text="trade.ticker || trade.symbol"></td>
+                                <td class="py-2 pr-4" x-text="trade.side"></td>
+                                <td class="py-2 pr-4 text-right numeric" x-text="formatNumber(trade.quantity)"></td>
+                                <td class="py-2 pr-4 text-right numeric" x-text="formatPrice(trade.price)"></td>
+                                <td class="py-2 pr-4" x-text="trade.currency"></td>
+                                <td class="py-2 pr-4 text-slate-500" x-text="trade.source_filename || 'IBKR CSV'"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="section-card control-room-panel">
+        <div class="section-header">
+            <div>
+                <h2 class="section-title">Text</h2>
+                <p class="section-description">TextNewsTextStatus, TextCurrentText. </p>
+            </div>
+            <button type="button"
+                    @click="refreshDiagnostics()"
+                    :disabled="diagnosticsLoading"
+                    class="btn-secondary disabled:opacity-50">
+                <span x-show="!diagnosticsLoading">RefreshText</span>
+                <span x-show="diagnosticsLoading">RefreshText...</span>
+            </button>
+        </div>
+        <div class="section-body space-y-4">
+            <div x-show="newsSourceDiagnostics.length === 0" class="empty-state section-card-muted p-6 text-sm text-slate-500">
+                No dataTextResult. TextRefreshTextTextNewsTextCurrentStatus. 
+            </div>
+            <div x-show="newsSourceDiagnostics.length > 0" class="list-stack control-source-list">
+                <template x-for="item in newsSourceDiagnostics" :key="item.source_name">
+                    <div class="list-row list-row-muted">
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h3 class="font-semibold text-slate-900" x-text="item.source_name"></h3>
+                                <span class="status-badge" :class="diagnosticStatusClass(item.status)" x-text="diagnosticStatusLabel(item.status)"></span>
+                            </div>
+                            <p class="mt-2 text-sm text-slate-600" x-text="item.message || 'Text'"></p>
+                            <p class="mt-2 text-xs text-slate-400 mono" x-show="item.requires_config_key" x-text="`Text: ${item.requires_config_key}`"></p>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </section>
+</div>
+
+<script>
+document.addEventListener('alpine:init', () => {
+    Alpine.data('settingsPage', () => ({
+        provider: 'gpt53',
+        gpt53Key: '',
+        gpt53BaseUrl: '',
+        gpt53Model: 'gpt-5.4',
+        newsapiKey: '',
+        tavilyKey: '',
+        newsAggregationStrategy: 'priority',
+        newsUseAiSearch: false,
+        newsAiEnrich: true,
+        usdToHkdRate: 7.8,
+        eurToHkdRate: 8.4,
+        hasGpt53Key: false,
+        hasNewsapiKey: false,
+        hasTavilyKey: false,
+        imaClientId: '',
+        imaApiKey: '',
+        imaKnowledgeBaseName: '',
+        imaKnowledgeBaseId: '',
+        imaConfigured: false,
+        hasImaApiKey: false,
+        gpt53Dirty: false,
+        gpt53BaseUrlDirty: false,
+        gpt53ModelDirty: false,
+        newsapiDirty: false,
+        tavilyDirty: false,
+        imaClientIdDirty: false,
+        imaApiKeyDirty: false,
+        usdToHkdRateDirty: false,
+        eurToHkdRateDirty: false,
+        saving: false,
+        saved: false,
+        error: '',
+        customModels: [],
+        showAddModel: false,
+        newModel: { name: '', base_url: '', model: '', api_key: '' },
+        savingCustomModel: false,
+        customModelError: '',
+        customModelSuccess: '',
+        showModelSelector: false,
+        activeModel: 'gpt53',
+        newsSourceDiagnostics: [],
+        diagnosticsLoading: false,
+        ibkrLedger: { summary: {}, trades: [], imports: [] },
+        ibkrImporting: false,
+        ibkrImportSummary: null,
+        ibkrImportError: '',
+        ibkrImportSuccess: '',
+        async init() {
+            const r = await fetch('/api/llm-config');
+            const d = await r.json();
+            this.provider = 'gpt53';
+            this.hasGpt53Key = !!d.has_gpt53_key;
+            this.gpt53BaseUrl = d.gpt53_base_url || '';
+            this.gpt53Model = d.gpt53_model || 'gpt-5.4';
+            this.hasNewsapiKey = !!d.has_newsapi_key;
+            this.hasTavilyKey = !!d.has_tavily_key;
+            this.newsAggregationStrategy = d.news_aggregation_strategy || 'priority';
+            this.newsUseAiSearch = !!d.news_use_ai_search;
+            this.newsAiEnrich = d.news_ai_enrich !== false;
+            this.usdToHkdRate = d.usd_to_hkd_rate || 7.8;
+            this.eurToHkdRate = d.eur_to_hkd_rate || 8.4;
+            this.customModels = d.custom_models || [];
+            this.activeModel = d.active_model || 'gpt53';
+            this.newsSourceDiagnostics = d.news_source_diagnostics || [];
+
+            const imaR = await fetch('/api/ima/config');
+            const imaD = await imaR.json();
+            this.imaClientId = imaD.client_id || '';
+            this.imaKnowledgeBaseName = imaD.knowledge_base_name || '';
+            this.imaKnowledgeBaseId = imaD.knowledge_base_id || '';
+            this.imaConfigured = !!imaD.configured;
+            this.hasImaApiKey = !!imaD.has_api_key;
+            await this.loadIbkrLedger();
+        },
+        async save() {
+            this.error = '';
+            this.saved = false;
+            this.saving = true;
+            const body = { provider: 'gpt53' };
+            if (this.gpt53Dirty) body.gpt53_api_key = this.gpt53Key;
+            if (this.gpt53BaseUrlDirty || this.gpt53BaseUrl !== undefined) body.gpt53_base_url = this.gpt53BaseUrl || '';
+            if (this.gpt53ModelDirty || this.gpt53Model !== undefined) body.gpt53_model = this.gpt53Model || 'gpt-5.4';
+            if (this.newsapiDirty) body.newsapi_api_key = this.newsapiKey;
+            if (this.tavilyDirty) body.tavily_api_key = this.tavilyKey;
+            body.news_aggregation_strategy = this.newsAggregationStrategy;
+            body.news_use_ai_search = this.newsUseAiSearch;
+            body.news_ai_enrich = this.newsAiEnrich;
+            if (this.usdToHkdRateDirty || this.usdToHkdRate !== undefined) body.usd_to_hkd_rate = parseFloat(this.usdToHkdRate) || 7.8;
+            if (this.eurToHkdRateDirty || this.eurToHkdRate !== undefined) body.eur_to_hkd_rate = parseFloat(this.eurToHkdRate) || 8.4;
+            try {
+                const r = await fetch('/api/llm-config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await r.json();
+                if (!r.ok) {
+                    this.error = data.error || 'SaveFailed';
+                    return;
+                }
+
+                if (this.imaClientIdDirty || this.imaApiKeyDirty) {
+                    const imaBody = {};
+                    if (this.imaClientIdDirty) imaBody.client_id = this.imaClientId;
+                    if (this.imaApiKeyDirty && this.imaApiKey) imaBody.api_key = this.imaApiKey;
+                    const imaR = await fetch('/api/ima/config', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(imaBody)
+                    });
+                    const imaData = await imaR.json();
+                    if (!imaR.ok) {
+                        this.error = imaData.error || 'IMA TextSaveFailed';
+                        return;
+                    }
+                    this.imaKnowledgeBaseName = imaData.knowledge_base_name || '';
+                    this.imaKnowledgeBaseId = imaData.knowledge_base_id || '';
+                    this.imaConfigured = !!imaData.configured;
+                    this.hasImaApiKey = !!imaData.has_api_key;
+                }
+
+                this.saved = true;
+                this.hasGpt53Key = this.gpt53Dirty ? !!this.gpt53Key : this.hasGpt53Key;
+                this.hasNewsapiKey = this.newsapiDirty ? !!this.newsapiKey : this.hasNewsapiKey;
+                this.hasTavilyKey = this.tavilyDirty ? !!this.tavilyKey : this.hasTavilyKey;
+                this.imaConfigured = (this.imaClientIdDirty ? !!this.imaClientId : this.imaConfigured) && (this.imaApiKeyDirty ? !!this.imaApiKey || this.hasImaApiKey : this.hasImaApiKey);
+                if (this.gpt53Dirty) this.gpt53Key = '';
+                if (this.newsapiDirty) this.newsapiKey = '';
+                if (this.tavilyDirty) this.tavilyKey = '';
+                if (this.imaApiKeyDirty) this.imaApiKey = '';
+                this.gpt53Dirty = false;
+                this.gpt53BaseUrlDirty = false;
+                this.gpt53ModelDirty = false;
+                this.newsapiDirty = false;
+                this.tavilyDirty = false;
+                this.imaClientIdDirty = false;
+                this.imaApiKeyDirty = false;
+                this.usdToHkdRateDirty = false;
+                this.eurToHkdRateDirty = false;
+            } catch (e) {
+                this.error = e.message || 'TextError';
+            } finally {
+                this.saving = false;
+            }
+        },
+        async refreshDiagnostics() {
+            this.diagnosticsLoading = true;
+            this.error = '';
+            try {
+                const data = await safeJsonFetch('/api/news-sources/health');
+                this.newsSourceDiagnostics = data.sources || [];
+            } catch (e) {
+                this.error = e.message || 'RefreshTextFailed';
+            } finally {
+                this.diagnosticsLoading = false;
+            }
+        },
+        async loadIbkrLedger() {
+            try {
+                const data = await safeJsonFetch('/api/ibkr/trades');
+                this.ibkrLedger = data.ledger || { summary: {}, trades: [], imports: [] };
+                this.ibkrLedger.summary = this.ibkrLedger.summary || {};
+                this.ibkrLedger.trades = this.ibkrLedger.trades || [];
+                this.ibkrLedger.imports = this.ibkrLedger.imports || [];
+            } catch (e) {
+                this.ibkrImportError = e.message || 'Load IBKR LedgerFailed';
+            }
+        },
+        async importIbkrTrades() {
+            this.ibkrImportError = '';
+            this.ibkrImportSuccess = '';
+            this.ibkrImportSummary = null;
+            const files = Array.from((this.$refs.ibkrCsvFiles && this.$refs.ibkrCsvFiles.files) || []);
+            if (files.length === 0) {
+                this.ibkrImportError = 'Text IBKR CSV Text';
+                return;
+            }
+            const SAMPLE = new FormData();
+            files.forEach(file => form.append('files', file));
+            this.ibkrImporting = true;
+            try {
+                const r = await fetch('/api/ibkr/trades/import', {
+                    method: 'POST',
+                    body: SAMPLE
+                });
+                const data = await r.json();
+                if (!r.ok) {
+                    this.ibkrImportError = data.error || 'ImportFailed';
+                    return;
+                }
+                this.ibkrImportSummary = data.summary || {};
+                this.ibkrLedger = data.ledger || { summary: {}, trades: [], imports: [] };
+                this.ibkrLedger.summary = this.ibkrLedger.summary || {};
+                this.ibkrLedger.trades = this.ibkrLedger.trades || [];
+                this.ibkrLedger.imports = this.ibkrLedger.imports || [];
+                const warnings = data.warnings || [];
+                if ((this.ibkrImportSummary.recognized_count || 0) === 0) {
+                    this.ibkrImportError = warnings[0] || 'CSV TextUpload, Text';
+                } else {
+                    this.ibkrImportSuccess = `ImportText: Text ${this.ibkrImportSummary.recognized_count || 0} Text, Text ${this.ibkrImportSummary.inserted_count || 0} Text, Text ${this.ibkrImportSummary.duplicate_count || 0} Text`;
+                }
+                if (this.$refs.ibkrCsvFiles) this.$refs.ibkrCsvFiles.value = '';
+            } catch (e) {
+                this.ibkrImportError = e.message || 'ImportFailed';
+            } finally {
+                this.ibkrImporting = false;
+            }
+        },
+        formatNumber(value) {
+            const num = Number(value || 0);
+            return Number.isFinite(num) ? num.toLocaleString() : '-';
+        },
+        formatPrice(value) {
+            const num = Number(value);
+            return Number.isFinite(num) ? num.toLocaleString(undefined, { maximumFractionDigits: 4 }) : '-';
+        },
+        diagnosticStatusLabel(status) {
+            if (status === 'ready') return 'Text';
+            if (status === 'missing_config') return 'Text';
+            if (status === 'disabled') return 'Text';
+            return 'Text';
+        },
+        diagnosticStatusClass(status) {
+            if (status === 'ready') return 'status-positive';
+            if (status === 'missing_config') return 'status-warning';
+            if (status === 'disabled') return 'status-neutral';
+            return 'status-negative';
+        },
+        async saveCustomModel() {
+            this.customModelError = '';
+            this.customModelSuccess = '';
+            if (!this.newModel.name || !this.newModel.base_url || !this.newModel.model || !this.newModel.api_key) {
+                this.customModelError = 'Text';
+                return;
+            }
+            this.savingCustomModel = true;
+            try {
+                const r = await fetch('/api/custom-models', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.newModel)
+                });
+                const data = await r.json();
+                if (!r.ok) {
+                    this.customModelError = data.error || 'SaveFailed';
+                    return;
+                }
+                this.customModelSuccess = data.message || 'SaveSuccess';
+                this.newModel = { name: '', base_url: '', model: '', api_key: '' };
+                this.showAddModel = false;
+                // TextLoadText
+                const configR = await fetch('/api/llm-config');
+                const configD = await configR.json();
+                this.customModels = configD.custom_models || [];
+                setTimeout(() => { this.customModelSuccess = ''; }, 3000);
+            } catch (e) {
+                this.customModelError = e.message || 'TextError';
+            } finally {
+                this.savingCustomModel = false;
+            }
+        },
+        cancelAddModel() {
+            this.showAddModel = false;
+            this.newModel = { name: '', base_url: '', model: '', api_key: '' };
+            this.customModelError = '';
+        },
+        async deleteCustomModel(name) {
+            if (!confirm(`Text "${name}" Text?`)) return;
+            this.customModelError = '';
+            this.customModelSuccess = '';
+            try {
+                const r = await fetch(`/api/custom-models/${encodeURIComponent(name)}`, {
+                    method: 'DELETE'
+                });
+                const data = await r.json();
+                if (!r.ok) {
+                    this.customModelError = data.error || 'TextFailed';
+                    return;
+                }
+                this.customModelSuccess = data.message || 'TextSuccess';
+                // TextLoadText
+                const configR = await fetch('/api/llm-config');
+                const configD = await configR.json();
+                this.customModels = configD.custom_models || [];
+                setTimeout(() => { this.customModelSuccess = ''; }, 3000);
+            } catch (e) {
+                this.customModelError = e.message || 'TextError';
+            }
+        },
+        async testCustomModel(name) {
+            this.customModelError = '';
+            this.customModelSuccess = '';
+            try {
+                const r = await fetch(`/api/custom-models/${encodeURIComponent(name)}/test`, {
+                    method: 'POST'
+                });
+                const data = await r.json();
+                if (!r.ok) {
+                    this.customModelError = `TextFailed: ${data.error || 'TextError'}`;
+                    return;
+                }
+                this.customModelSuccess = `TextSuccess!Text: ${data.response}`;
+                setTimeout(() => { this.customModelSuccess = ''; }, 5000);
+            } catch (e) {
+                this.customModelError = `TextFailed: ${e.message || 'TextError'}`;
+            }
+        },
+        async switchModel(modelName) {
+            try {
+                const r = await fetch('/api/active-model', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model_name: modelName })
+                });
+                const data = await r.json();
+                if (!r.ok) {
+                    this.customModelError = data.error || 'TextFailed';
+                    return;
+                }
+                this.activeModel = modelName;
+                this.showModelSelector = false;
+                this.customModelSuccess = `Text: ${this.getActiveModelDisplay()}`;
+                setTimeout(() => { this.customModelSuccess = ''; }, 3000);
+            } catch (e) {
+                this.customModelError = `TextFailed: ${e.message || 'TextError'}`;
+            }
+        },
+        getActiveModelDisplay() {
+            if (this.activeModel === 'gpt53') {
+                return 'GPT-5.4 Default';
+            }
+            const model = this.customModels.find(m => m.name === this.activeModel);
+            return model ? model.name : 'GPT-5.4 Default';
+        }
+    }));
+});
+</script>
+{% endblock %}

@@ -1,0 +1,264 @@
+{% extends "base.html" %}
+
+{% block title %}TextStock - TextResearchText{% endblock %}
+
+{% block content %}
+<div x-data="quickStockBuilder()" class="max-w-5xl mx-auto space-y-6">
+    <div class="page-header">
+        <div>
+            <div class="page-kicker">TextResearchText</div>
+            <h1 class="page-title">TextStock</h1>
+            <p class="page-subtitle">Text, Text, Text, Text. </p>
+        </div>
+        <div class="toolbar">
+            <a href="/stocks" class="btn-secondary">TextStockText</a>
+        </div>
+    </div>
+
+    <div x-show="notice.text" x-cloak class="alert-banner" :class="notice.type === 'error' ? 'error' : notice.type === 'warn' ? 'warn' : 'info'">
+        <span x-text="notice.text"></span>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <section class="section-card xl:col-span-8 overflow-hidden">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Text</h2>
+                    <p class="section-description">DefaultTextStockText, TickerText, TextGenerateTextResearchText. </p>
+                </div>
+            </div>
+            <div class="section-body !py-5">
+                <SAMPLE class="space-y-5" @submit.prevent="saveStock()">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="field-label">StockText</label>
+                            <input x-model.trim="form.stock_name"
+                                type="text"
+                                class="control-input"
+                                placeholder="Text: Text / Meta / Text">
+                        </div>
+                        <div>
+                            <label class="field-label">StockTicker</label>
+                            <input x-model.trim="form.ticker"
+                                type="text"
+                                class="control-input numeric"
+                                placeholder="Text: TSM / 1810.HK / 7203.T / SAMPLE">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-4">
+                        <div>
+                            <label class="field-label">Text?</label>
+                            <textarea x-model.trim="form.profit_driver"
+                                class="control-textarea"
+                                rows="5"
+                                placeholder="TextReturn?Text, Text, Text, Text, Text, Text?"></textarea>
+                        </div>
+                        <div>
+                            <label class="field-label">CurrentText?</label>
+                            <textarea x-model.trim="form.price_contains"
+                                class="control-textarea"
+                                rows="5"
+                                placeholder="CurrentText?Text?"></textarea>
+                        </div>
+                        <div>
+                            <label class="field-label">Text?</label>
+                            <textarea x-model.trim="form.odds_assessment"
+                                class="control-textarea"
+                                rows="5"
+                                placeholder="Text, Text, Text, Text?"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4">
+                        <div class="text-xs font-medium tracking-[0.16em] uppercase text-slate-400">Text</div>
+                        <div class="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="field-label">NewsSearchText</label>
+                                <input x-model.trim="form.search_name"
+                                    type="text"
+                                    class="control-input"
+                                    placeholder="Text, Text">
+                            </div>
+                            <div>
+                                <label class="field-label">Text ID</label>
+                                <div class="surface-panel-muted !py-3 !px-3 min-h-[2.75rem] flex items-center">
+                                    <span class="numeric text-sm text-slate-700" x-text="derivedStockId || 'TextStockTextTicker'"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="toolbar justify-end">
+                        <button type="button" @click="resetForm()" class="btn-ghost">Text</button>
+                        <button type="submit" :disabled="saving || !canSubmit" class="btn-primary">
+                            <span x-show="!saving">SaveTextDetails</span>
+                            <span x-show="saving">SaveText...</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <section class="section-card xl:col-span-4 overflow-hidden">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">TextAutoGenerateText</h2>
+                    <p class="section-description">TextGenerateText, TextDetailsText, TextResearchText. </p>
+                </div>
+            </div>
+            <div class="section-body space-y-3">
+                <div class="surface-panel">
+                    <div class="metric-label">Text thesis</div>
+                    <p class="mt-3 text-sm leading-6 text-slate-700">DefaultTextTextTextSummary, TextStockTextResearchText. </p>
+                </div>
+                <div class="surface-panel">
+                    <div class="metric-label">Text</div>
+                    <p class="mt-3 text-sm leading-6 text-slate-700">CurrentTextTextTextTextSave, TextWatchTextReviewText. </p>
+                </div>
+                <div class="surface-panel">
+                    <div class="metric-label">Text</div>
+                    <p class="mt-3 text-sm leading-6 text-slate-700">TextDetailsText; Text Playbook, Text, TextResearchText. </p>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function quickStockBuilder() {
+    return {
+        saving: false,
+        notice: { text: '', type: 'info' },
+        SAMPLE: {
+            stock_name: '',
+            ticker: '',
+            search_name: '',
+            profit_driver: '',
+            price_contains: '',
+            odds_assessment: ''
+        },
+
+        get derivedStockId() {
+            const ticker = (this.form.ticker || '').trim().toUpperCase();
+            if (ticker) return ticker;
+            const stockName = (this.form.stock_name || '').trim();
+            if (!stockName) return '';
+            return stockName
+                .replace(/\s+/g, '_')
+                .replace(/[\\/:"*?<>|]+/g, '_');
+        },
+
+        get canSubmit() {
+            return !!(this.derivedStockId && (this.form.stock_name || this.form.ticker));
+        },
+
+        setNotice(text, type = 'info') {
+            this.notice = { text, type };
+        },
+
+        resetForm() {
+            this.form = {
+                stock_name: '',
+                ticker: '',
+                search_name: '',
+                profit_driver: '',
+                price_contains: '',
+                odds_assessment: ''
+            };
+            this.notice = { text: '', type: 'info' };
+        },
+
+        buildPayload() {
+            const profitDriver = (this.form.profit_driver || '').trim();
+            const priceContains = (this.form.price_contains || '').trim();
+            const oddsAssessment = (this.form.odds_assessment || '').trim();
+            const keyPoints = [priceContains, oddsAssessment].filter(Boolean);
+
+            return {
+                stock_id: this.derivedStockId,
+                stock_name: (this.form.stock_name || '').trim() || this.derivedStockId,
+                ticker: (this.form.ticker || '').trim().toUpperCase(),
+                search_name: (this.form.search_name || '').trim(),
+                profit_driver: profitDriver,
+                price_contains: priceContains,
+                odds_assessment: oddsAssessment,
+                core_thesis: {
+                    summary: profitDriver,
+                    key_points: keyPoints,
+                    market_gap: priceContains
+                },
+                validation_signals: [],
+                invalidation_triggers: [],
+                related_entities: [],
+                tracking_metrics: [],
+                operation_plan: {},
+                interview_transcript: []
+            };
+        },
+
+        mergeWithExisting(existing, payload) {
+            const merged = {
+                ...(existing || {}),
+                ...payload,
+                core_thesis: {
+                    ...((existing || {}).core_thesis || {}),
+                    ...(payload.core_thesis || {})
+                }
+            };
+
+            if (!(payload.profit_driver || '').trim() && (existing || {}).core_thesis?.summary) {
+                merged.core_thesis.summary = existing.core_thesis.summary;
+            }
+            if (!(payload.price_contains || '').trim() && (existing || {}).core_thesis?.market_gap) {
+                merged.core_thesis.market_gap = existing.core_thesis.market_gap;
+            }
+            if (!((payload.core_thesis || {}).key_points || []).length && Array.isArray((existing || {}).core_thesis?.key_points)) {
+                merged.core_thesis.key_points = existing.core_thesis.key_points;
+            }
+
+            if (!(payload.search_name || '').trim() && (existing || {}).search_name) {
+                merged.search_name = existing.search_name;
+            }
+
+            return merged;
+        },
+
+        async saveStock() {
+            if (!this.canSubmit || this.saving) return;
+            this.saving = true;
+            this.setNotice('');
+
+            try {
+                const stockId = encodeURIComponent(this.derivedStockId);
+                let existing = {};
+                try {
+                    const existingResp = await fetch(`/api/stock/${stockId}`);
+                    if (existingResp.ok) {
+                        existing = await existingResp.json().catch(() => ({}));
+                    }
+                } catch (_) {}
+
+                const payload = this.mergeWithExisting(existing, this.buildPayload());
+                const response = await fetch(`/api/stock/${stockId}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || `TextFailed (${response.status})`);
+                }
+                window.location.href = `/stock/${stockId}`;
+            } catch (error) {
+                this.setNotice(`SaveFailed: ${error.message || error}`, 'error');
+            }
+
+            this.saving = false;
+        }
+    };
+}
+</script>
+{% endblock %}

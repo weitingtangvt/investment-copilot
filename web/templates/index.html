@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block title %}ResearchText - TextResearchText{% endblock %}
+
+{% block content %}
+<div class="space-y-6"
+     x-data="{ weekly: {{ initial_weekly|tojson }}, prefs: {{ initial_prefs|tojson }}, weeklyError: '', prefsError: '', loadingWeekly: false, loadingPrefs: false }"
+     x-init="
+        fetch('/api/weekly-review')
+            .then(async r => {
+                const d = await r.json();
+                if (!r.ok || d?.error) {
+                    weeklyError = d?.error || 'This WeekSummaryText';
+                    return;
+                }
+                weekly = d || {};
+                weeklyError = '';
+            })
+            .catch(() => { weeklyError = 'This WeekSummaryText'; });
+        fetch('/api/preferences')
+            .then(async r => {
+                const d = await r.json();
+                if (!r.ok || d?.error) {
+                    prefsError = d?.error || 'Text';
+                    return;
+                }
+                prefs = d || {};
+                prefsError = '';
+            })
+            .catch(() => { prefsError = 'Text'; });
+     ">
+    <section class="hero-band">
+        <div class="page-header">
+            <div class="max-w-4xl">
+                <div class="page-kicker">ResearchText</div>
+                <h1 class="page-title">ResearchText</h1>
+                <p class="page-subtitle">Text, TextRisk, TextReviewTextResearchText. TextThis WeekText, TextResearchText, Text, Text. </p>
+            </div>
+            <div class="toolbar">
+                <a href="/weekly-review" class="btn-primary">TextWeekly Review</a>
+                <a href="/add-stock" class="btn-secondary">TextStock</a>
+            </div>
+        </div>
+        <section class="summary-strip">
+            <div class="summary-item">
+                <div class="summary-label">Text</div>
+                <div class="summary-value numeric" x-text="loadingWeekly ? '--' : (weekly?.week_id || '--')"></div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">Text</div>
+                <div class="summary-value numeric">{{ stocks|length }}</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">Text</div>
+                <div class="summary-value numeric" x-text="loadingWeekly ? '--' : Object.values(weekly?.stocks || {}).filter(s => s?.user_view).length"></div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-label">TextNews</div>
+                <div class="summary-value numeric" x-text="loadingWeekly ? '--' : Object.values(weekly?.stocks || {}).filter(s => !s?.news_summary).length"></div>
+            </div>
+        </section>
+    </section>
+    <div class="alert-banner warning" x-show="weeklyError" x-text="'This WeekSummaryText: ' + weeklyError"></div>
+
+    <div class="desk-grid-8-4 workspace-grid">
+        <section class="desk-sheet workspace-lead">
+            <div class="desk-sheet-header toolbar-strip">
+                <div>
+                    <div class="desk-caption">This WeekText</div>
+                    <h2 class="desk-heading">This WeekResearchText</h2>
+                    <p class="desk-copy">Text, Text, TextRiskTextThis WeekResearchText. </p>
+                </div>
+                <div class="toolbar-group text-sm text-slate-500">
+                    <span class="tag-pill"><span>TextStatus</span><span class="numeric text-slate-900" x-text="loadingWeekly ? '--' : (weekly?.market_context?.signals?.length || 0)"></span></span>
+                    <span class="tag-pill"><span>ResearchText</span><span class="numeric text-slate-900">{{ stocks|length }}</span></span>
+                </div>
+            </div>
+            <div class="desk-sheet-body space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="surface-panel">
+                        <div class="block-title">Text</div>
+                        <p class="block-copy"
+                           x-text="loadingWeekly ? 'TextThis WeekTextStatus...' : (weekly?.market_context?.ai_summary || 'TextWeekly ReviewTextRefreshTextStatus, ConfirmThis WeekText. ')"></p>
+                    </div>
+                    <div class="surface-panel">
+                        <div class="block-title">TextRisk</div>
+                        <p class="block-copy"
+                           x-text="loadingWeekly ? 'Text...' : ((weekly?.factor_analysis?.portfolio_diagnosis || []).slice(0, 2).map(item => item.label).join(' / ') || 'TextAnalysisText, TextCurrentTextRiskText. ')"></p>
+                    </div>
+                    <div class="surface-panel">
+                        <div class="block-title">ResearchText</div>
+                        <p class="block-copy">TextNewsText, TextThis WeekText, TextStock, Text thesis Text. </p>
+                    </div>
+                </div>
+
+                <div class="fact-grid">
+                    <div class="fact-card">
+                        <div class="metric-label">TextNewsText</div>
+                        <div class="metric-value numeric" x-text="loadingWeekly ? '--' : Object.values(weekly?.stocks || {}).filter(s => !s?.news_summary).length"></div>
+                        <div class="metric-note">TextGenerateThis WeekNewsTextStockText. </div>
+                    </div>
+                    <div class="fact-card">
+                        <div class="metric-label">Text</div>
+                        <div class="metric-value numeric" x-text="loadingWeekly ? '--' : Object.values(weekly?.stocks || {}).filter(s => s?.user_view).length"></div>
+                        <div class="metric-note">TextStockText. </div>
+                    </div>
+                    <div class="fact-card">
+                        <div class="metric-label">ResearchText</div>
+                        <div class="metric-value numeric">{{ stocks|length }}</div>
+                        <div class="metric-note">CurrentTextStock. </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="desk-sheet">
+            <div class="desk-sheet-header">
+                <div class="desk-caption">Text</div>
+                <h2 class="desk-heading">ResearchText</h2>
+                <p class="desk-copy">Text, Text, Text, Text. </p>
+            </div>
+            <div class="desk-sheet-body">
+                <div class="feed-stack">
+                    <a href="/weekly-review" class="feed-entry">
+                        <div class="feed-meta"><span class="tag-pill-accent">01</span><span>TextReview</span></div>
+                        <div class="mt-2 feed-title">RefreshTextStatus</div>
+                        <p class="mt-2 feed-copy">TextThis WeekText, NewsText, AI SummaryText, TextResearchText. </p>
+                    </a>
+                    <a href="/portfolio-analysis" class="feed-entry">
+                        <div class="feed-meta"><span class="tag-pill-accent">02</span><span>TextAnalysis</span></div>
+                        <div class="mt-2 feed-title">TextRiskText</div>
+                        <p class="mt-2 feed-copy">ConfirmText, TextThis WeekTextRiskText. </p>
+                    </a>
+                    <a href="/stocks" class="feed-entry">
+                        <div class="feed-meta"><span class="tag-pill-accent">03</span><span>TextResearch</span></div>
+                        <div class="mt-2 feed-title">Text thesis TextResearchText</div>
+                        <p class="mt-2 feed-copy">TextStock, Text thesis, Text. </p>
+                    </a>
+                    <a href="/research_history" class="feed-entry">
+                        <div class="feed-meta"><span class="tag-pill-accent">04</span><span>ResearchText</span></div>
+                        <div class="mt-2 feed-title">TextHistoryText</div>
+                        <p class="mt-2 feed-copy">Text, TextResearchText. </p>
+                    </a>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div class="desk-grid-7-5">
+        <section class="section-card overflow-hidden">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Text</h2>
+                    <p class="section-description">Text. </p>
+                </div>
+                <div class="toolbar">
+                    <a href="/stocks" class="btn-ghost">Text</a>
+                </div>
+            </div>
+            <div class="section-body" style="padding:0;">
+                {% if stocks %}
+                <div class="overflow-x-auto">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Stock</th>
+                                <th>TextResearch</th>
+                                <th>TextSummary</th>
+                                <th class="numeric text-right">Text</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stock in stocks[:12] %}
+                            <tr>
+                                <td>
+                                    <div class="font-medium text-slate-900">{{ stock.stock_name }}</div>
+                                    {% if stock.ticker %}
+                                    <div class="text-xs text-slate-400 numeric mt-1">{{ stock.ticker }}</div>
+                                    {% endif %}
+                                </td>
+                                <td class="text-sm text-slate-600">
+                                    {% if stock.last_research and stock.last_research.date %}
+                                        {{ stock.last_research.date[:10] }}
+                                    {% else %}
+                                        No dataResearch
+                                    {% endif %}
+                                </td>
+                                <td class="text-sm text-slate-600">
+                                    {% if stock.core_thesis and stock.core_thesis.summary %}
+                                        {{ stock.core_thesis.summary }}
+                                    {% else %}
+                                        Text
+                                    {% endif %}
+                                </td>
+                                <td class="text-right">
+                                    <a href="/stock/{{ stock.stock_id }}" class="btn-ghost numeric">Text</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <div class="empty-icon">IA</div>
+                    <p class="mb-3">TextStock. </p>
+                    <a href="/add-stock" class="btn-primary">TextStock</a>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <div class="space-y-6">
+            <section class="desk-sheet">
+                <div class="desk-sheet-header toolbar-strip">
+                    <div>
+                        <div class="desk-caption">Text</div>
+                        <h2 class="desk-heading">Text</h2>
+                        <p class="desk-copy">Text, Text. </p>
+                    </div>
+                    <a href="/playbook" class="btn-ghost">Text</a>
+                </div>
+                <div class="desk-sheet-body">
+                    {% if portfolio %}
+                    <div class="section-stack">
+                        <div class="surface-panel">
+                            <div class="block-title">Text</div>
+                            <div class="mt-3 section-stack">
+                                {% if portfolio.market_views and portfolio.market_views.main_themes %}
+                                    {% for theme in portfolio.market_views.main_themes[:4] %}
+                                    <div class="kv-row">
+                                        <span class="kv-key text-slate-700 font-medium">{{ theme.theme }}</span>
+                                        <span class="status-badge status-neutral">{{ theme.confidence }}</span>
+                                    </div>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="block-copy mt-3">TextSaveText. </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="surface-panel">
+                            <div class="block-title">TradeText</div>
+                            <div class="mt-3 section-stack text-sm text-slate-700">
+                                {% if portfolio.portfolio_strategy and portfolio.portfolio_strategy.trading_rules %}
+                                    {% if portfolio.portfolio_strategy.trading_rules is mapping %}
+                                        {% if portfolio.portfolio_strategy.trading_rules.stop_loss_strategy %}
+                                        <p>{{ portfolio.portfolio_strategy.trading_rules.stop_loss_strategy }}</p>
+                                        {% endif %}
+                                        {% if portfolio.portfolio_strategy.trading_rules.position_philosophy %}
+                                        <p>{{ portfolio.portfolio_strategy.trading_rules.position_philosophy }}</p>
+                                        {% endif %}
+                                    {% else %}
+                                        <p>{{ portfolio.portfolio_strategy.trading_rules }}</p>
+                                    {% endif %}
+                                {% else %}
+                                    <p class="text-slate-500">TextTradeText. </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <div class="empty-icon">PB</div>
+                        <p class="mb-3">TextSettingsText. </p>
+                        <a href="/playbook" class="btn-primary">Text</a>
+                    </div>
+                    {% endif %}
+                </div>
+            </section>
+
+            <section class="desk-sheet">
+                <div class="desk-sheet-header toolbar-strip">
+                    <div>
+                        <div class="desk-caption">Text</div>
+                        <h2 class="desk-heading">Text</h2>
+                        <p class="desk-copy">TextDecisionText, TextResearchText. </p>
+                    </div>
+                    <a href="/preferences" class="btn-ghost">Text</a>
+                </div>
+                <div class="desk-sheet-body">
+                    <div x-show="loadingPrefs" class="loading-state !py-8">TextLoadText...</div>
+                    <div x-show="!loadingPrefs && prefs" class="section-stack">
+                        <div class="detail-grid">
+                            <div class="surface-panel">
+                                <div class="block-title">DecisionText</div>
+                                <p class="block-copy mt-2" x-text="prefs.preference_summary?.decision_style || 'Text'"></p>
+                            </div>
+                            <div class="surface-panel">
+                                <div class="block-title">RiskText</div>
+                                <p class="block-copy mt-2" x-text="prefs.preference_summary?.risk_tolerance || 'Text'"></p>
+                            </div>
+                        </div>
+                        <div class="alert-banner info" x-show="prefs.preferences?.length">
+                            Text <span class="numeric" x-text="prefs.preferences?.length || 0"></span> Text, TextResearchText. 
+                        </div>
+                        <div class="surface-panel-muted" x-show="prefs.preferences?.length">
+                            <div class="block-title">Text</div>
+                            <p class="block-copy mt-2">
+                                Text <span class="font-medium" x-text="prefs.preferences?.[0]?.trigger || '--'"></span> Text, 
+                                Text <span class="font-medium" x-text="prefs.preferences?.[0]?.my_response || '--'"></span>. 
+                            </p>
+                        </div>
+                    </div>
+                    <div class="alert-banner warning" x-show="prefsError" x-text="'Text: ' + prefsError"></div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <section class="desk-sheet">
+        <div class="desk-sheet-header toolbar-strip">
+            <div>
+                <div class="desk-caption">Text</div>
+                <h2 class="desk-heading">This WeekText</h2>
+                <p class="desk-copy">TextReviewText, TextCurrentText. </p>
+            </div>
+            <a href="/weekly-review" class="btn-ghost">TextReview</a>
+        </div>
+        <div class="desk-sheet-body">
+            <div x-show="loadingWeekly" class="loading-state !py-8">TextLoadThis WeekText...</div>
+            <div class="alert-banner warning" x-show="weeklyError" x-text="'This WeekText: ' + weeklyError"></div>
+            <div x-show="!loadingWeekly && weekly" class="detail-grid">
+                <div class="fact-card">
+                    <div class="metric-label">Text</div>
+                    <div class="metric-value numeric" x-text="weekly.week_id || '--'"></div>
+                </div>
+                <div class="fact-card">
+                    <div class="metric-label">TextReviewStock</div>
+                    <div class="metric-value numeric" x-text="Object.values(weekly.stocks || {}).filter(s => s?.user_view).length"></div>
+                </div>
+                <div class="fact-card">
+                    <div class="metric-label">TextStock</div>
+                    <div class="metric-value numeric" x-text="Object.keys(weekly.stocks || {}).length"></div>
+                </div>
+                <div class="fact-card">
+                    <div class="metric-label">Text</div>
+                    <p class="block-copy mt-2">RefreshText, Text, Text. </p>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

@@ -1,0 +1,391 @@
+{% extends "base.html" %}
+
+{% block title %}Twitter Text - TextResearchText{% endblock %}
+
+{% block content %}
+<div x-data="twitterFeed()" x-init="init()" class="space-y-6">
+    <div class="page-header">
+        <div class="max-w-4xl">
+            <div class="page-kicker">Text</div>
+            <h1 class="page-title">Twitter Text</h1>
+            <p class="page-subtitle">TextResearchText. Text, Text, Text thesis Text. </p>
+        </div>
+        <div class="toolbar">
+            <button @click="showConfig = true" class="btn-secondary">Text API</button>
+            <button @click="refreshFeed(false)" :disabled="loading" class="btn-secondary disabled:opacity-50">
+                <span x-show="!loading">RefreshText</span>
+                <span x-show="loading">LoadText...</span>
+            </button>
+            <button @click="refreshFeed(true)" :disabled="loading" class="btn-primary disabled:opacity-50" title="Text API Text, Text">
+                <span x-show="!loading">TextRefresh</span>
+                <span x-show="loading">LoadText...</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+        <section class="section-card xl:col-span-4 overflow-hidden">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Text</h2>
+                    <p class="section-description">TextResearchText, Text. </p>
+                </div>
+                <span class="status-badge status-neutral numeric" x-text="followedUsers.length + ' Text'"></span>
+            </div>
+            <div class="section-body space-y-4">
+                <div class="detail-grid">
+                    <div class="fact-card">
+                        <div class="metric-label">Text</div>
+                        <div class="metric-value numeric" x-text="followedUsers.length"></div>
+                    </div>
+                    <div class="fact-card">
+                        <div class="metric-label">Text</div>
+                        <div class="metric-value numeric" x-text="tweets.length"></div>
+                    </div>
+                </div>
+
+                <div x-show="followedUsers.length > 0" class="token-list">
+                    <template x-for="user in followedUsers" :key="user">
+                        <div class="tag-pill-accent">
+                            <span>@<span x-text="user"></span></span>
+                            <button @click="removeUser(user)" class="text-blue-600">×</button>
+                        </div>
+                    </template>
+                </div>
+
+                <div x-show="followedUsers.length === 0" class="section-card-muted empty-state !py-8">
+                    <div class="empty-icon mono">TW</div>
+                    <p class="text-sm">No dataText, Text. </p>
+                </div>
+
+                <div class="surface-panel-muted">
+                    <label class="field-label">Text</label>
+                    <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-3">
+                        <input type="text"
+                            x-model="newUsername"
+                            @keyup.enter="addUser()"
+                            placeholder="Text Twitter Text, Text: elonmusk"
+                            class="control-input mono">
+                        <button @click="addUser()"
+                            :disabled="!newUsername || adding"
+                            class="btn-primary disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span x-show="!adding">Text</span>
+                            <span x-show="adding">Text...</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section-card xl:col-span-8 overflow-hidden">
+            <div class="section-header">
+                <div>
+                    <h2 class="section-title">Text</h2>
+                    <p class="section-description">Text, Text, Text. </p>
+                </div>
+                <div class="toolbar-group text-sm text-slate-500">
+                    <span class="tag-pill"><span>Text</span><span class="numeric text-slate-900" x-text="tweets.length"></span></span>
+                </div>
+            </div>
+            <div class="section-body">
+                <div x-show="tweets.length > 0" class="feed-stack">
+                    <template x-for="tweet in tweets" :key="tweet.id">
+                        <article class="feed-entry">
+                            <div class="flex items-start gap-3">
+                                <img :src="tweet.user?.profile_image_url || 'https://abs.twimg.com/sticky/default_profile_images/default_profile_normal.png'"
+                                    class="w-11 h-11 rounded-xl border border-slate-200"
+                                    :alt="tweet.user?.name">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <span class="font-semibold text-slate-900" x-text="tweet.user?.name || tweet._username"></span>
+                                        <span class="text-slate-500 mono">@<span x-text="tweet.user?.username || tweet._username"></span></span>
+                                        <span class="text-xs text-slate-400">•</span>
+                                        <span class="text-xs text-slate-400" x-text="formatTime(tweet.createdAt || tweet.created_at)"></span>
+                                        <a :href="`https://twitter.com/${tweet.user?.username || tweet._username}/status/${tweet.id}`"
+                                           target="_blank"
+                                           class="ml-auto btn-secondary">
+                                            Text Twitter Text
+                                        </a>
+                                    </div>
+
+                                    <div class="mt-3 feed-copy whitespace-pre-wrap" x-html="formatTweetText(tweet.text)"></div>
+
+                                    <div x-show="tweet.media && tweet.media.length > 0" class="mt-4 grid grid-cols-2 gap-2">
+                                        <template x-for="media in tweet.media" :key="media.media_key">
+                                            <div x-show="media.type === 'photo'">
+                                                <img :src="media.url" class="rounded-xl border border-slate-200 w-full" :alt="media.alt_text">
+                                            </div>
+                                        </template>
+                                    </div>
+
+                                    <div class="mt-4 token-list text-xs text-slate-500">
+                                        <span x-show="tweet.public_metrics?.reply_count" class="tag-pill">Text <span class="numeric" x-text="tweet.public_metrics.reply_count"></span></span>
+                                        <span x-show="tweet.public_metrics?.retweet_count" class="tag-pill">Text <span class="numeric" x-text="tweet.public_metrics.retweet_count"></span></span>
+                                        <span x-show="tweet.public_metrics?.like_count" class="tag-pill">Text <span class="numeric" x-text="tweet.public_metrics.like_count"></span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    </template>
+                </div>
+
+                <div x-show="!loading && tweets.length === 0 && followedUsers.length > 0" class="empty-state section-card-muted">
+                    <div class="empty-icon mono">TW</div>
+                    <p class="text-sm">No dataText. </p>
+                </div>
+
+                <div x-show="loading && tweets.length === 0" class="loading-state section-card-muted">
+                    TextLoadText...
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div x-show="showConfig"
+        class="fixed inset-0 z-50 overflow-y-auto"
+        @click.self="showConfig = false"
+        x-cloak>
+        <div class="flex items-center justify-center min-h-screen px-4">
+            <div class="modal-backdrop"></div>
+            <div class="modal-shell">
+                <div class="modal-header">
+                    <div>
+                        <h3 class="section-title">Twitter API Text</h3>
+                        <p class="section-description">Text API Key Text. </p>
+                    </div>
+                    <button @click="showConfig = false" class="btn-ghost">Text</button>
+                </div>
+
+                <div class="modal-body form-grid">
+                    <div>
+                        <label class="field-label">API Text(twitterapi.io)</label>
+                        <input type="password"
+                            x-model="config.api_key"
+                            placeholder="Text API Text"
+                            class="control-input">
+                        <p class="field-hint">Text <a href="https://twitterapi.io" target="_blank" class="text-blue-600 hover:underline">twitterapi.io</a> Text. </p>
+                    </div>
+
+                    <div>
+                        <label class="field-label">Text</label>
+                        <input type="number"
+                            x-model.number="config.tweets_per_user"
+                            min="5" max="50"
+                            class="control-input numeric">
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button @click="showConfig = false" class="btn-secondary">Cancel</button>
+                    <button @click="saveConfig()" class="btn-primary">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function twitterFeed() {
+    return {
+        tweets: [],
+        followedUsers: [],
+        newUsername: '',
+        loading: false,
+        adding: false,
+        showConfig: false,
+        config: {
+            api_key: '',
+            tweets_per_user: 10
+        },
+
+        async init() {
+            await this.loadConfig();
+            if (this.config.api_key && this.followedUsers.length > 0) {
+                await this.refreshFeed();
+            }
+        },
+
+        async loadConfig() {
+            try {
+                const r = await fetch('/api/twitter/config');
+                const data = await r.json();
+                this.config.api_key = data.api_key || '';
+                this.config.tweets_per_user = data.tweets_per_user || 10;
+                this.followedUsers = data.followed_users || [];
+            } catch (e) {
+                console.error('LoadTextFailed:', e);
+            }
+        },
+
+        async saveConfig() {
+            try {
+                const r = await fetch('/api/twitter/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        api_key: this.config.api_key,
+                        followed_users: this.followedUsers,
+                        tweets_per_user: this.config.tweets_per_user
+                    })
+                });
+
+                const data = await r.json();
+                if (data.success) {
+                    alert('TextSaveSuccess!');
+                    this.showConfig = false;
+                    await this.refreshFeed();
+                } else {
+                    alert('SaveFailed: ' + (data.error || 'TextError'));
+                }
+            } catch (e) {
+                alert('SaveFailed: ' + e.message);
+            }
+        },
+
+        async refreshFeed(forceRefresh = false) {
+            if (!this.config.api_key) {
+                alert('Text API Text');
+                this.showConfig = true;
+                return;
+            }
+
+            if (this.followedUsers.length === 0) {
+                alert('Text');
+                return;
+            }
+
+            this.loading = true;
+            try {
+                const url = forceRefresh ? '/api/twitter/feed?force=true' : '/api/twitter/feed';
+                const r = await fetch(url);
+                const data = await r.json();
+
+                if (data.error) {
+                    if (data.error.includes('429') || data.error.includes('Too Many Requests')) {
+                        alert('API Text: Text, Text 1-2 Text. \n\nText: TextRefreshTextText API Text. ');
+                    } else {
+                        alert('LoadFailed: ' + data.error);
+                    }
+                } else {
+                    this.tweets = data.tweets || [];
+                    if (this.tweets.length === 0) {
+                        alert('Text. Text: \n1. API Text\n2. Text\n3. API Text');
+                    } else if (data.from_cache) {
+                        console.log('Text');
+                    }
+                }
+            } catch (e) {
+                alert('LoadFailed: ' + e.message);
+            }
+            this.loading = false;
+        },
+
+        async addUser() {
+            if (!this.newUsername) return;
+
+            const username = this.newUsername.trim().replace('@', '');
+
+            if (this.followedUsers.includes(username)) {
+                alert('Text');
+                return;
+            }
+
+            this.adding = true;
+            try {
+                const r = await fetch('/api/twitter/user/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username })
+                });
+
+                const data = await r.json();
+                if (data.success) {
+                    this.followedUsers = data.followed_users;
+                    this.newUsername = '';
+                    alert(`SuccessText @${username}`);
+                    await this.refreshFeed();
+                } else {
+                    alert('TextFailed: ' + (data.error || 'TextError'));
+                }
+            } catch (e) {
+                alert('TextFailed: ' + e.message);
+            }
+            this.adding = false;
+        },
+
+        async removeUser(username) {
+            const confirmed = window.appConfirm
+                ? await window.appConfirm({
+                    title: 'Text',
+                    message: `Text @${username}?TextCurrentText. `,
+                    confirmText: 'Text',
+                    tone: 'danger'
+                })
+                : confirm(`Text @${username}?`);
+            if (!confirmed) return;
+
+            try {
+                const r = await fetch('/api/twitter/user/remove', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username })
+                });
+
+                const data = await r.json();
+                if (data.success) {
+                    this.followedUsers = data.followed_users;
+                    this.tweets = this.tweets.filter(t => t._username !== username);
+                }
+            } catch (e) {
+                alert('TextFailed: ' + e.message);
+            }
+        },
+
+        formatTime(timestamp) {
+            if (!timestamp) return 'Text';
+
+            try {
+                const date = new Date(timestamp);
+
+                if (isNaN(date.getTime())) {
+                    return 'TextError';
+                }
+
+                const now = new Date();
+                const diff = now - date;
+                const minutes = Math.floor(diff / 60000);
+                const hours = Math.floor(diff / 3600000);
+                const days = Math.floor(diff / 86400000);
+
+                if (minutes < 1) return 'Text';
+                if (minutes < 60) return `${minutes}Text`;
+                if (hours < 24) return `${hours}Text`;
+                if (days < 7) return `${days}Text`;
+                return date.toLocaleDateString('zh-CN', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            } catch (e) {
+                console.error('DateTextError:', timestamp, e);
+                return timestamp;
+            }
+        },
+
+        formatTweetText(text) {
+            if (!text) return '';
+
+            text = text.replace(/&/g, '&amp;')
+                      .replace(/</g, '&lt;')
+                      .replace(/>/g, '&gt;');
+
+            text = text.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" class="text-blue-600 hover:underline">$1</a>');
+            text = text.replace(/@(\w+)/g, '<a href="https://twitter.com/$1" target="_blank" class="text-blue-600 hover:underline">@$1</a>');
+            text = text.replace(/#(\w+)/g, '<a href="https://twitter.com/hashtag/$1" target="_blank" class="text-blue-600 hover:underline">#$1</a>');
+
+            return text;
+        }
+    }
+}
+</script>
+{% endblock %}
